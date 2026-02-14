@@ -1,7 +1,20 @@
+# Python/Byte-compiled
 __pycache__/
-*.pyc
+*.py[cod]
+*.class
 venv/
 .env
+
+# Experiment Logs (Exclude raw data, keep the final summary)
 outputs/experiments/*.json
-outputs/plots/*.png
-.ipynb_checkpoints/
+!outputs/experiments/final_report.json
+
+# IDEs
+.vscode/
+.idea/
+.DS_Store
+
+# Distribution / Build
+dist/
+build/
+*.egg-info/

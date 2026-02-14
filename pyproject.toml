@@ -1,0 +1,15 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "qfa-verify"
+version = "0.1.0"
+description = "Noise-resilient quantum verification via Adaptive Safety Anchoring."
+dependencies = [
+    "qiskit>=1.0.0",
+    "qiskit-aer",
+    "matplotlib",
+    "seaborn",
+    "pandas"
+]
