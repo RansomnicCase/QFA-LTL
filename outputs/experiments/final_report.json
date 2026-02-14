@@ -1,60 +1,60 @@
 {
     "backend": "fake_brisbane",
-    "timestamp": "2026-02-14 17:40:16",
+    "timestamp": "2026-02-14 18:53:32",
     "results": [
         {
             "algorithm": "grover_correct",
             "type": "correct",
-            "pass_rate": 95.8984375,
+            "pass_rate": 95.703125,
             "verdict": "pass",
             "threshold": 0.15
         },
         {
             "algorithm": "grover_missing_diffusion",
             "type": "buggy",
-            "pass_rate": 26.66015625,
+            "pass_rate": 25.87890625,
             "verdict": "pass",
             "threshold": 0.15
         },
         {
             "algorithm": "grover_wrong_oracle",
             "type": "buggy",
-            "pass_rate": 95.703125,
+            "pass_rate": 95.60546875,
             "verdict": "pass",
             "threshold": 0.15
         },
         {
             "algorithm": "grover_wrong_angle",
             "type": "buggy",
-            "pass_rate": 83.30078125,
+            "pass_rate": 83.7890625,
             "verdict": "pass",
             "threshold": 0.15
         },
         {
             "algorithm": "bv_correct",
             "type": "correct",
-            "pass_rate": 95.60546875,
+            "pass_rate": 96.484375,
             "verdict": "pass",
             "threshold": 0.15
         },
         {
             "algorithm": "bv_wrong_secret",
             "type": "buggy",
-            "pass_rate": 95.21484375,
+            "pass_rate": 95.5078125,
             "verdict": "pass",
             "threshold": 0.15
         },
         {
             "algorithm": "bv_missing_hadamard",
             "type": "buggy",
-            "pass_rate": 7.12890625,
+            "pass_rate": 7.8125,
             "verdict": "fail",
             "threshold": 0.15
         },
         {
             "algorithm": "bv_wrong_cnot",
             "type": "buggy",
-            "pass_rate": 95.1171875,
+            "pass_rate": 94.53125,
             "verdict": "pass",
             "threshold": 0.15
         },
@@ -68,77 +68,77 @@
         {
             "algorithm": "qft_missing_swap",
             "type": "buggy",
-            "pass_rate": 8.0078125,
+            "pass_rate": 7.6171875,
             "verdict": "fail",
             "threshold": 0.15
         },
         {
             "algorithm": "qft_wrong_phase",
             "type": "buggy",
-            "pass_rate": 7.8125,
+            "pass_rate": 7.91015625,
             "verdict": "fail",
             "threshold": 0.15
         },
         {
             "algorithm": "qft_missing_h",
             "type": "buggy",
-            "pass_rate": 14.16015625,
+            "pass_rate": 13.57421875,
             "verdict": "fail",
             "threshold": 0.15
         },
         {
             "algorithm": "ghz_correct",
             "type": "correct",
-            "pass_rate": 42.1875,
+            "pass_rate": 42.96875,
             "verdict": "pass",
             "threshold": 0.15
         },
         {
             "algorithm": "ghz_missing_cnot",
             "type": "buggy",
-            "pass_rate": 46.875,
+            "pass_rate": 45.99609375,
             "verdict": "pass",
             "threshold": 0.15
         },
         {
             "algorithm": "ghz_wrong_entanglement",
             "type": "buggy",
-            "pass_rate": 46.19140625,
+            "pass_rate": 46.77734375,
             "verdict": "pass",
             "threshold": 0.15
         },
         {
             "algorithm": "ghz_decoherence",
             "type": "buggy",
-            "pass_rate": 40.91796875,
+            "pass_rate": 43.26171875,
             "verdict": "pass",
             "threshold": 0.15
         },
         {
             "algorithm": "qaoa_correct",
             "type": "correct",
-            "pass_rate": 25.390625,
+            "pass_rate": 25.29296875,
             "verdict": "pass",
             "threshold": 0.15
         },
         {
             "algorithm": "qaoa_wrong_gamma",
             "type": "buggy",
-            "pass_rate": 13.18359375,
+            "pass_rate": 11.62109375,
             "verdict": "fail",
             "threshold": 0.15
         },
         {
             "algorithm": "qaoa_insufficient_depth",
             "type": "buggy",
-            "pass_rate": 16.796875,
+            "pass_rate": 17.87109375,
             "verdict": "pass",
             "threshold": 0.15
         },
         {
             "algorithm": "qaoa_wrong_problem",
             "type": "buggy",
-            "pass_rate": 18.75,
+            "pass_rate": 20.703125,
             "verdict": "pass",
             "threshold": 0.15
         },
@@ -152,21 +152,21 @@
         {
             "algorithm": "dj_constant_function",
             "type": "buggy",
-            "pass_rate": 98.53515625,
+            "pass_rate": 99.0234375,
             "verdict": "pass",
             "threshold": 0.15
         },
         {
             "algorithm": "dj_wrong_measurement",
             "type": "buggy",
-            "pass_rate": 26.07421875,
+            "pass_rate": 26.3671875,
             "verdict": "pass",
             "threshold": 0.15
         },
         {
             "algorithm": "dj_incomplete_oracle",
             "type": "buggy",
-            "pass_rate": 98.046875,
+            "pass_rate": 98.2421875,
             "verdict": "pass",
             "threshold": 0.15
         }
