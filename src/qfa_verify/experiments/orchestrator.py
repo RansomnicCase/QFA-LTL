@@ -17,10 +17,10 @@ from collections import defaultdict
 import numpy as np
 
 # Internal Imports
-from src.ibm.runner import IBMRunner, SimulatorRunner, IBMJobResult
-from src.experiments.benchmarks import BenchmarkSuite
+from ..ibm.runner import IBMRunner, SimulatorRunner, IBMJobResult
+from ..experiments.benchmarks import BenchmarkSuite
 
-class ExperimentOrchestrator:
+class SafetyOrchestrator:
     def __init__(self, use_ibm: bool = True, token: Optional[str] = None):
         self.use_ibm = use_ibm
         # Select Backend Runner based on mode

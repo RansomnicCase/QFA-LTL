@@ -7,8 +7,8 @@ from dataclasses import dataclass
 from collections import deque
 import numpy as np
 
-from src.qfa.circuit_compiler import CircuitQFA, BasisState
-from src.qfa.spec_automaton import BuchiAutomaton
+from qfa_verify.qfa.circuit_compiler import CircuitQFA, BasisState
+from qfa_verify.qfa.spec_automaton import BuchiAutomaton
 
 @dataclass(frozen=True)
 class ProductState:
@@ -27,7 +27,7 @@ class ProductTransition:
     probability: float  # Transition probability
     observation: str  # 'sat' or 'unsat'
 
-class ProductConstructor:
+class ProductAutomaton:
     """
     Constructs product of Circuit-QFA and Spec-QFA.
     Used for static analysis to extract test thresholds.
