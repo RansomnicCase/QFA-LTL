@@ -1,5 +1,48 @@
-🛡️ QFA-LTL: Quantum Finite Automata & LTL VerifierQFA-LTL is a production-grade verification framework designed to scale the "Quantum Walls" of measurement collapse and hardware noise. By combining Linear Temporal Logic (LTL) with Quantum Finite Automata (QFA), this tool provides a hardware-aware test oracle that maintains 100% Recall even on noisy NISQ devices.🚀 Key InnovationsAdaptive Safety Anchor: Unlike static thresholds, QFA-LTL dynamically adjusts the pass/fail bar based on real-time noise profiles.Zero-Knowledge Calibration (ZKC): Uses a pre-flight Bell-state probe to measure actual hardware fidelity before executing the target circuit.Volume-Based Scaling: A research-grade noise model that scales the verification threshold based on two-qubit gate density ($N_{2q}$) and register width.Temporal Logic Enforcement: Seamlessly verifies properties like Reachability ($F$), Invariance ($G$), and Persistence ($FG$) using Büchi Automata logic.🛠️ ArchitectureThe system is built on a modular pipeline designed for "Universal Verification" of custom quantum code:Specification: Define properties using LTL strings (e.g., FG(p > t)).Calibration: ZKC Probe measures the $T_1/T_2$ and gate error drift on the target physical qubits.Thresholding: The engine calculates the Adaptive Anchor using exponential fidelity decay.Execution: The circuit runs on IBM hardware (via qiskit-ibm-runtime) or noise-model simulators.Verdict: An automated Pass/Fail report is generated based on the hardware-aware anchor.📊 Performance Study: Adaptive vs. FixedOur Phase 4 Validation demonstrates that QFA-LTL prevents "False Failures" where a correct circuit would be rejected by a legacy fixed-threshold verifier due to hardware noise.💻 Quick StartInstallationBashgit clone https://github.com/your-username/qfa_ltl_project.git
-cd qfa_ltl_project
+# QFA-LTL: Quantum Finite Automata and LTL Verification Framework
+
+QFA-LTL is a hardware-aware verification framework designed to address the critical challenges of measurement collapse, state-space explosion, and stochastic noise in NISQ-era quantum computing. By integrating Linear Temporal Logic (LTL) with Quantum Finite Automata (QFA), the system provides a robust test oracle that maintains high recall by adapting to real-time hardware conditions.
+
+## Key Innovations
+
+* **Adaptive Safety Anchor**: A dynamic thresholding mechanism that adjusts pass/fail criteria based on real-time noise profiles rather than static benchmarks.
+* **Zero-Knowledge Calibration (ZKC)**: A pre-execution protocol that uses Bell-state probes to measure actual hardware fidelity on specific physical qubits.
+* **Volume-Based Scaling Model**: A noise-resilient model that scales verification thresholds according to two-qubit gate density (N2q) and register width.
+* **Temporal Property Enforcement**: Support for verifying complex temporal properties including Reachability (F), Invariance (G), and Persistence (FG).
+
+## System Architecture
+
+The framework operates through a modular pipeline:
+
+1. **Specification**: LTL properties are defined as temporal constraints (e.g., "FG(p > t)").
+2. **Calibration**: The ZKC module executes a probe circuit to detect gate drift and decoherence on the target backend.
+3. **Thresholding**: The engine calculates an Adaptive Anchor using an exponential fidelity decay model based on circuit complexity.
+4. **Execution**: The SafetyOrchestrator manages the execution flow via the SimulatorRunner or IBMRunner.
+5. **Verdict**: An automated report is generated, providing an adaptive verdict based on hardware-aware performance.
+
+
+## Experimental Results
+
+Validation across multiple algorithms demonstrates that QFA-LTL significantly reduces false failure rates compared to legacy fixed-threshold methods.
+
+* **GHZ State**: Validated parity and entanglement stability under varying noise.
+* **Bernstein-Vazirani (10-qubit)**: Demonstrated scalability and signal tracking in high-width registers.
+* **Quantum Phase Estimation (QPE)**: Validated logic enforcement in high-depth, high-volume gate sequences.
+
+
+## Project Structure
+
+* **src/qfa_verify/engine.py**: Core UniversalVerifier logic and ZKC implementation.
+* **src/qfa_verify/experiments/orchestrator.py**: SafetyOrchestrator for managing metrics and reporting.
+* **src/qfa_verify/ibm/runner.py**: Execution interface for Aer simulators and IBM Quantum backends.
+* **verify.py**: Primary CLI entry point for running verification tasks.
+
+## Installation and Usage
+
+### Requirements
+* Python 3.9+
+* Qiskit 1.0+
+* Qiskit Aer
+
+### Environment Setup
+```bash
 export PYTHONPATH=$PYTHONPATH:$(pwd)
-Running a VerificationTo verify a Quantum Phase Estimation (QPE) circuit for stability ($FG$) with a probability metric:Bashpython3 verify.py --circuit examples/qpe_complex.py --spec "F G (p > t)" --metric probability --target "100"
-🧪 Validated AlgorithmsGHZ State: Parity and entanglement verification.Bernstein-Vazirani (10-qubit): Large-scale scalability stress test.Quantum Phase Estimation (QPE): High-volume gate density and logic enforcement.
