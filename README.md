@@ -46,3 +46,10 @@ Validation across multiple algorithms demonstrates that QFA-LTL significantly re
 ### Environment Setup
 ```bash
 export PYTHONPATH=$PYTHONPATH:$(pwd)
+```
+
+###Running a Verification Task
+*To verify a circuit with a specific LTL property and target state:
+```bash
+python3 verify.py --circuit examples/qpe_complex.py --spec "F G (p > t)" --metric probability --target "100"
+```
