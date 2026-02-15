@@ -7,8 +7,8 @@ from dataclasses import dataclass
 from collections import deque
 import numpy as np
 
-from qfa_verify.qfa.circuit_compiler import CircuitQFA, BasisState
-from qfa_verify.qfa.spec_automaton import BuchiAutomaton
+from src.qfa_verify.qfa.circuit_compiler import CircuitQFA, BasisState
+from src.qfa_verify.qfa.spec_automaton import BuchiAutomaton
 
 @dataclass(frozen=True)
 class ProductState:
