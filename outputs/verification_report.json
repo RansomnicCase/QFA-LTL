@@ -1,12 +1,12 @@
 {
-    "timestamp": "2026-02-15T15:43:16.656940",
-    "input_file": "examples/ghz.qasm",
+    "timestamp": "2026-02-15T17:58:41.309767",
+    "input_file": "examples/final_success.py",
     "backend": "fake_brisbane",
-    "spec": "F(p > t)",
+    "spec": "G(p > t)",
     "results": {
         "verdict": "pass",
-        "metric_value": 0.953125,
-        "threshold": 0.4986523596256579,
-        "calibration_loss": 0.044921875
+        "metric_value": 0.9833984375,
+        "threshold": 0.16507059273684174,
+        "calibration_loss": 0.130859375
     }
 }
