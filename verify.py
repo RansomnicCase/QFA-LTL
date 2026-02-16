@@ -43,6 +43,7 @@ def main():
                         default='probability', help="Success metric to use")
     parser.add_argument("--target", required=True, help="Target state(s). For parity, use '00,11'")
     parser.add_argument("--backend", default="fake_brisbane", help="Backend noise model")
+    parser.add_argument("--noise", type=float, default=0.0, help="Adversarial noise injection probability (0.0 to 1.0)")
     parser.add_argument("--output", help="Optional path to save JSON report")
 
     args = parser.parse_args()
@@ -57,8 +58,14 @@ def main():
         # 2. Load Circuit (New Robust Loader)
         qc = load_circuit(args.circuit)
         
-        # 3. Run Production Pipeline (includes ZKC)
-        report = engine.verify(qc, args.spec, metric_type=args.metric, target_params=target)
+        # 3. Run Production Pipeline (includes ZKC and Noise Injection)
+        report = engine.verify(
+            qc, 
+            args.spec, 
+            metric_type=args.metric, 
+            target_params=target, 
+            adversarial_noise=args.noise
+        )
 
         # 4. Formatted Output for Research Results
         print("\n" + "═"*55)
@@ -67,6 +74,8 @@ def main():
         print(f" CIRCUIT:      {args.circuit}")
         print(f" BACKEND:      {args.backend}")
         print(f" METRIC:       {args.metric.upper()}")
+        if args.noise > 0:
+            print(f" ADVERSARIAL:  {args.noise*100:.1f}% INJECTED NOISE")
         print("-" * 55)
         
         # Hardware Health Section (ZKC)
@@ -82,11 +91,15 @@ def main():
         # 5. Structured Logging (Save to JSON)
         if args.output or True:  # Defaulting to true for Phase 3 checklist compliance
             report_path = args.output if args.output else f"outputs/verification_report.json"
+            # Ensure output directory exists
+            os.makedirs(os.path.dirname(report_path), exist_ok=True)
+            
             structured_data = {
                 "timestamp": datetime.now().isoformat(),
                 "input_file": args.circuit,
                 "backend": args.backend,
                 "spec": args.spec,
+                "adversarial_noise": args.noise,
                 "results": {
                     "verdict": report['verdict'],
                     "metric_value": report['metric_value'],
