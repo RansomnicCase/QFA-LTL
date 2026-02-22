@@ -1,13 +1,13 @@
 {
-    "timestamp": "2026-02-16T20:10:56.618743",
-    "input_file": "examples/newtry.qasm",
+    "timestamp": "2026-02-20T10:48:21.549711",
+    "input_file": "examples/ising_6q.qasm",
     "backend": "fake_brisbane",
-    "spec": "F G (p > t)",
-    "adversarial_noise": 0.05,
+    "spec": "G(p > t)",
+    "adversarial_noise": 0.04,
     "results": {
         "verdict": "fail",
-        "metric_value": 0.0810546875,
-        "threshold": 0.2248484744007925,
-        "calibration_loss": 0.0517578125
+        "metric_value": 0.455078125,
+        "threshold": 0.6851322534377042,
+        "calibration_loss": 0.02001953125
     }
 }
