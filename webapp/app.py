@@ -46,9 +46,42 @@ def run_demo(payload: dict):
         spec = parse_ltl(ltl_str)
         spec_qfa = SpecQFABuilder.from_ltl(spec)
 
-        # Prepare trace for monitoring demo
-        trace = ['00'] * 500 + [target] * 600
-        monitor = TemporalMonitor(spec_qfa, target, threshold)
+        # The spec is authoritative: derive the target basis set and the
+        # comparison operator from the parsed predicate, not from the UI
+        # defaults alone (this is what makes G(... < t) behave correctly).
+        pred = spec.get('predicate', {})
+        bases = pred.get('bases') or ([pred['basis']] if pred.get('basis') else [])
+        comparison = pred.get('comparison', '>')
+        threshold = float(pred.get('threshold', threshold))
+        if not target or target == '11' and bases:
+            target = bases[0]
+        targets = bases if bases else [target]
+
+        # Build a demo trace that actually satisfies the spec under windowed
+        # Bernoulli semantics (window = 100 shots).
+        #  - '>' / '>=': a burst of target shots fills the window.
+        #  - '<' / '<=': targets sprinkled thinly so no window exceeds t.
+        #  - Bounded ops (F<=k / G<=k): the burst must land within the bound.
+        WINDOW = 100
+        other = '0' * len(targets[0]) if targets else '00'
+        other = '1' * len(targets[0]) if other == targets[0] else other
+        op = spec.get('operator', 'F')
+        bound = None
+        if op.startswith('F<=') or op.startswith('G<='):
+            bound = int(op.split('<=')[1])
+        if comparison in ('<', '<='):
+            trace = ([other] * 19 + [targets[0]]) * 50  # ~5% target, never trips t
+        elif bound is not None:
+            # The automaton advances per shot, so the bound is in shots, not
+            # windows. The burst must land within `bound` shots; keep the
+            # window fill time (WINDOW shots) well inside it.
+            prefix = max(0, bound - WINDOW - 50)
+            trace = [other] * prefix + [targets[0]] * 600
+        else:
+            trace = [other] * 500 + [targets[0]] * 600   # window fills to 100%
+
+        monitor = TemporalMonitor(spec_qfa, targets, threshold,
+                                  comparison=comparison, window_size=WINDOW)
         result, history = monitor.process_trace(trace)
 
         response = {
