@@ -141,23 +141,44 @@ class CircuitQFA:
     
     def _apply_ry(self, target: int, theta: float, new_sup: Dict[BasisState, complex]):
         """RY rotation: amplitude mixing"""
-        cos_t = np.cos(theta/2)
-        sin_t = np.sin(theta/2)
-        
-        for state, amp in self.superposition.items():
-            s0 = BasisState(state.bits)  # With bit 0
-            s1 = state.flip(target)      # With bit 1
-            
-            if state.bits[target] == '0':
-                new_sup[s0] += amp * cos_t
-                new_sup[s1] += amp * sin_t
-                self._record_transition(state, s0, amp * cos_t, f'ry({theta:.3f})')
-                self._record_transition(state, s1, amp * sin_t, f'ry({theta:.3f})')
+        # Use the correct RY matrix:
+        # [ cos(t/2)  -sin(t/2)
+        #   sin(t/2)   cos(t/2) ]
+        cos_t = np.cos(theta / 2)
+        sin_t = np.sin(theta / 2)
+
+        # Iterate over pairs to preserve amplitude combining correctly
+        processed = set()
+        for state, amp in list(self.superposition.items()):
+            if state in processed:
+                continue
+            bit = state.bits[target]
+            partner = state.flip(target)
+            partner_amp = self.superposition.get(partner, 0)
+
+            if bit == '0':
+                # amplitudes (a0, a1) -> (cos*a0 - sin*a1, sin*a0 + cos*a1)
+                a0 = amp
+                a1 = partner_amp
+                new0 = cos_t * a0 - sin_t * a1
+                new1 = sin_t * a0 + cos_t * a1
+                new_sup[state] += new0
+                new_sup[partner] += new1
+                self._record_transition(state, state, new0, f'ry({theta:.3f})')
+                self._record_transition(state, partner, new1, f'ry({theta:.3f})')
             else:
-                new_sup[s0] -= amp * sin_t  # Note the sign
-                new_sup[s1] += amp * cos_t
-                self._record_transition(state, s0, -amp * sin_t, f'ry({theta:.3f})')
-                self._record_transition(state, s1, amp * cos_t, f'ry({theta:.3f})')
+                # partner is the |0> state when bit=='1', handled symmetrically
+                a1 = amp
+                a0 = partner_amp
+                new0 = cos_t * a0 - sin_t * a1
+                new1 = sin_t * a0 + cos_t * a1
+                new_sup[partner] += new0
+                new_sup[state] += new1
+                self._record_transition(state, partner, new0, f'ry({theta:.3f})')
+                self._record_transition(state, state, new1, f'ry({theta:.3f})')
+
+            processed.add(state)
+            processed.add(partner)
     
     def _apply_cz(self, control: int, target: int, new_sup: Dict[BasisState, complex]):
         """Controlled-Z: phase flip if both 1"""
@@ -215,22 +236,36 @@ class CircuitQFA:
 
     def _apply_rx(self, target: int, theta: float, new_sup: Dict[BasisState, complex]):
         """RX rotation: X-axis rotation"""
-        cos_t = np.cos(theta/2)
-        sin_t = np.sin(theta/2) * 1j  # i*sin for RX
-    
-        for state, amp in self.superposition.items():
-            s0 = BasisState(state.bits)
-            s1 = state.flip(target)
-        
+        # RX matrix: exp(-i θ/2 X) = [[cos, -i sin], [-i sin, cos]]
+        cos_t = np.cos(theta / 2)
+        sin_t = np.sin(theta / 2)
+        i = 1j
+
+        processed = set()
+        for state, amp in list(self.superposition.items()):
+            if state in processed:
+                continue
+            partner = state.flip(target)
+            a0 = amp if state.bits[target] == '0' else self.superposition.get(partner, 0)
+            a1 = amp if state.bits[target] == '1' else self.superposition.get(partner, 0)
+
+            # Compute new amplitudes for the |0>, |1> pair
+            new0 = cos_t * a0 - i * sin_t * a1
+            new1 = -i * sin_t * a0 + cos_t * a1
+
             if state.bits[target] == '0':
-                new_sup[s0] += amp * cos_t
-                new_sup[s1] += amp * sin_t * (-1j)  # RX specific
+                new_sup[state] += new0
+                new_sup[partner] += new1
+                self._record_transition(state, state, new0, f'rx({theta:.3f})')
+                self._record_transition(state, partner, new1, f'rx({theta:.3f})')
             else:
-                new_sup[s0] += amp * sin_t * (-1j)
-                new_sup[s1] += amp * cos_t
-        
-            self._record_transition(state, s0, amp * cos_t, f'rx({theta:.3f})')
-            self._record_transition(state, s1, amp * sin_t, f'rx({theta:.3f})')
+                new_sup[partner] += new0
+                new_sup[state] += new1
+                self._record_transition(state, partner, new0, f'rx({theta:.3f})')
+                self._record_transition(state, state, new1, f'rx({theta:.3f})')
+
+            processed.add(state)
+            processed.add(partner)
     
     def _record_transition(self, from_s: BasisState, to_s: BasisState, amp: complex, gate: str):
         """Record transition for automaton construction"""
@@ -239,20 +274,19 @@ class CircuitQFA:
     def _prune(self, superposition: Dict[BasisState, complex], threshold: float = 1e-10):
         """Remove negligible states to prevent exponential blowup"""
         # Remove low probability states
-        to_remove = [s for s, a in superposition.items() if abs(a)**2 < threshold]
+        to_remove = [s for s, a in list(superposition.items()) if abs(a)**2 < threshold]
         for s in to_remove:
             del superposition[s]
-        
-        # If still too large, keep only top-k by probability
+
+        # If still too large, keep only top-k by probability (preserve amplitudes)
         if len(superposition) > self.max_size:
-            items = [(abs(a)**2, s) for s, a in superposition.items()]
-            top_k = heapq.nlargest(self.max_size, items)
+            items = [ (abs(a)**2, s, a) for s, a in superposition.items() ]
+            top_k = heapq.nlargest(self.max_size, items, key=lambda x: x[0])
+            new_sup = {}
+            for prob, state, amp in top_k:
+                new_sup[state] = amp
             superposition.clear()
-            for prob, state in top_k:
-                # We need to restore the amplitude, but we only stored probability
-                # For now, just keep the state with original amplitude from old dict
-                # This is a simplification - in production, use proper heap with values
-                pass  # Placeholder - pruning logic needs full implementation
+            superposition.update(new_sup)
     
     def get_probability(self, basis_str: str) -> float:
         """Get probability of specific basis state"""

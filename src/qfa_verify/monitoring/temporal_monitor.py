@@ -45,6 +45,8 @@ class TemporalMonitor:
                 status = Satisfaction.UNSAT
             
             prob = shots[:t+1].count(self.target) / (t+1) if t > 0 else 0
+            # Correct running probability: include current step (t starts at 0)
+            prob = shots[:t+1].count(self.target) / (t+1)
             
             state = MonitorState(
                 step=t,
@@ -67,6 +69,9 @@ class TemporalMonitor:
         return outcome == self.target
     
     def _is_globally_op(self) -> bool:
+        # Prefer explicit operator flag if available
+        if hasattr(self.spec, 'operator'):
+            return str(self.spec.operator).startswith('G')
         return any(s in ['q_violated', 'q_ok'] for s in self.spec.states)
     
     def get_diagnostic(self) -> Dict:

@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>QFA-LTL Demo</title>
+    <link rel="stylesheet" href="/static/styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  </head>
+  <body>
+    <header>
+      <h1>QFA-LTL Demo</h1>
+      <p>Interactive demo: runs the LTL → Spec QFA → Temporal Monitor pipeline.</p>
+    </header>
+
+    <main>
+      <div class="card">
+        <label>Example</label>
+        <select id="exampleSelect">
+          <option value="custom">-- Custom / Enter your own --</option>
+          <option value="ghz_eventually">GHZ: Eventually |11> &gt; 0.85</option>
+          <option value="bounded_eventually">Bounded Eventually: F<=5(prob(|11>) &gt; 0.8)</option>
+          <option value="globally">Globally: G(prob(|00>) &lt; 0.10)</option>
+          <option value="bv">Bernstein-Vazirani: F(prob(|10101>) &gt; 0.5)</option>
+        </select>
+
+        <label>LTL specification</label>
+        <input id="ltlInput" value="F(prob(|11>) > 0.85)" />
+        <label>Target basis (e.g., 11)</label>
+        <input id="targetInput" value="11" />
+        <label>Threshold</label>
+        <input id="thresholdInput" value="0.85" />
+        <label><input type="checkbox" id="circuitChk" /> Run circuit compilation demo</label>
+        <div style="margin-top:8px">
+          <button id="runBtn">Run Demo</button>
+          <span id="status"></span>
+        </div>
+      </div>
+
+      <section id="results" style="display:none">
+        <h2>Results</h2>
+        <div id="panels">
+          <div class="panel"><h3>Parsed Spec</h3><pre id="parsedSpec"></pre></div>
+          <div class="panel"><h3>Automaton</h3><pre id="automaton"></pre></div>
+          <div class="panel"><h3>Monitor</h3><pre id="monitor"></pre></div>
+        </div>
+
+        <div id="chartContainer" style="max-width:480px;">
+          <canvas id="probChart"></canvas>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <small>Uses repository backend logic. Qiskit demo runs only if available on server.</small>
+    </footer>
+
+    <script src="/static/script.js"></script>
+  </body>
+</html>

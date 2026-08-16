@@ -47,15 +47,37 @@ class AdversarialNoise:
     def inject_gate_errors(circuit, error_probability=0.05):
         if error_probability <= 0:
             return circuit
-            
-        noisy_qc = QuantumCircuit(*circuit.qregs, *circuit.cregs)
+        # Build a new circuit with same number of qubits/clbits to avoid qreg/creg constructor differences
+        try:
+            nq = circuit.num_qubits
+            nc = circuit.num_clbits
+        except Exception:
+            # Fallback to register-based reconstruction
+            noisy_qc = QuantumCircuit(*circuit.qregs, *circuit.cregs)
+            for instruction in circuit.data:
+                noisy_qc.append(instruction)
+                if random.random() < error_probability:
+                    target_qubit = instruction.qubits[0]
+                    error_gate = XGate() if random.random() > 0.5 else ZGate()
+                    noisy_qc.append(error_gate, [target_qubit])
+            return noisy_qc
+
+        noisy_qc = QuantumCircuit(nq, nc)
         for instruction in circuit.data:
-            noisy_qc.append(instruction)
+            # Append the original instruction (operation + qubits + clbits)
+            try:
+                noisy_qc.append(instruction.operation, instruction.qubits, instruction.clbits)
+            except Exception:
+                # Best-effort fallback: use raw append
+                noisy_qc.append(instruction)
+
             if random.random() < error_probability:
-                target_qubit = instruction.qubits[0]
-                error_gate = XGate() if random.random() > 0.5 else ZGate()
-                noisy_qc.append(error_gate, [target_qubit])
-        
+                # Inject single-qubit error on first qubit of the instruction if available
+                if instruction.qubits:
+                    target_qubit = instruction.qubits[0]
+                    error_gate = XGate() if random.random() > 0.5 else ZGate()
+                    noisy_qc.append(error_gate, [target_qubit])
+
         return noisy_qc
 
 class UniversalVerifier:

@@ -103,7 +103,26 @@ class ProductAutomaton:
     
     def _check_satisfaction(self, basis: str, prob: float) -> bool:
         """Check if basis state satisfies the LTL predicate"""
-        # Simple case: basis matches target and prob > threshold
+        # If the spec provides a predicate dict, evaluate it
+        pred = getattr(self.spec, 'predicate', None)
+        if isinstance(pred, dict) and pred.get('type') == 'probability':
+            # Normalize basis representation
+            pred_basis = str(pred.get('basis'))
+            comp = pred.get('comparison')
+            thresh = float(pred.get('threshold'))
+
+            if basis == pred_basis:
+                if comp == '>':
+                    return prob > thresh
+                if comp == '>=':
+                    return prob >= thresh
+                if comp == '<':
+                    return prob < thresh
+                if comp == '<=':
+                    return prob <= thresh
+                if comp == '==':
+                    return prob == thresh
+        # Fallback: simple target/threshold check for backward compatibility
         if basis == self.target:
             return prob > self.threshold
         return False
