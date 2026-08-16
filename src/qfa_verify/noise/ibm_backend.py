@@ -149,8 +149,16 @@ class NoiseAwareThresholdCalculator:
         p = ideal_prob
         n = num_shots
         
-        # Wilson score interval
-        wilson_margin = self.z_score * np.sqrt(max(p * (1-p) / n, 0))
+        # Wilson score lower bound (more accurate for proportions)
+        z = self.z_score
+        if n <= 0:
+            wilson_margin = 0.0
+        else:
+            denom = 1 + (z**2)/n
+            center = p + (z**2)/(2*n)
+            sq = p * (1 - p) / n + (z**2) / (4 * n**2)
+            lower = (center - z * np.sqrt(max(sq, 0))) / denom
+            wilson_margin = max(0.0, p - lower)
         
         # Hardware noise margin
         noise_margin = hardware_noise * ideal_prob * safety_factor

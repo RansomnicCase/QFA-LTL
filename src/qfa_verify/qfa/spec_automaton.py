@@ -37,15 +37,23 @@ class SpecQFABuilder:
         pred = ltl_spec['predicate']
         
         if op == 'F':
-            return SpecQFABuilder._build_eventually(pred)
+            ba = SpecQFABuilder._build_eventually(pred)
+            ba.operator = 'F'
+            return ba
         elif op == 'G':
-            return SpecQFABuilder._build_globally(pred)
+            ba = SpecQFABuilder._build_globally(pred)
+            ba.operator = 'G'
+            return ba
         elif op.startswith('F<='):
             k = int(op.split('<=')[1])
-            return SpecQFABuilder._build_bounded_eventually(pred, k)
+            ba = SpecQFABuilder._build_bounded_eventually(pred, k)
+            ba.operator = f'F<={k}'
+            return ba
         elif op.startswith('G<='):
             k = int(op.split('<=')[1])
-            return SpecQFABuilder._build_bounded_globally(pred, k)
+            ba = SpecQFABuilder._build_bounded_globally(pred, k)
+            ba.operator = f'G<={k}'
+            return ba
         else:
             raise ValueError(f"Unsupported operator: {op}")
     
