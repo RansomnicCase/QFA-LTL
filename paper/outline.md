@@ -1,6 +1,8 @@
 # Paper Outline (IEEE QCE 2026 format — two-column IEEEtran)
 
-Working title: **QFA-LTL: Noise-Adaptive Statistical Test Oracles for Temporal Verification of NISQ Circuit Executions**
+Working title: **Verification of Noisy Quantum Executions: A Derived, Calibration-Free Adaptive Anchor with a Characterized Detectability Frontier**
+
+Status: WS-1/2/3B/4 complete. Live skeleton at `paper/main.tex`. Abstract v2 in `paper/abstract.md`. Honest results in `paper/phase1_results.md` and WS-1 commit.
 
 ## 1. Introduction
 - The verification problem on NISQ: correct circuits fail static thresholds on noisy days; faulty circuits pass on clean ones. False failures burn expensive device time and erode trust in quantum results.
@@ -42,13 +44,14 @@ Working title: **QFA-LTL: Noise-Adaptive Statistical Test Oracles for Temporal V
 - Metrics defined on the *detection* convention (buggy = positive): recall, precision, false-failure rate.
 
 ## 5. Results
-- R1: False-failure rate 0.0% (30/30 correct pass) — headline.
-- R2: Alarm precision 100%; detection recall 77.8%; confusion matrix (fig1), pass rates (fig2).
-- R3: Sensitivity analysis (fig3): operating point recall 0.778 / precision 1.000 / FF 0.000; wide plateau where recall = 1.0 under their definition (correct-circuit preservation).
-- R4: Compiler validation vs Qiskit statevector: max |Δp| = 8.9e-16.
-- R5: Temporal monitor behavior: windowed F/G/bounded cases (from tests) — include as a small table or figure of monitor traces.
-- R6: [pending Phase 1] Multi-seed CIs, baseline comparisons, hold-out thresholds.
-- R7: [pending Phase 3] Real-hardware ZKC drift study.
+- R1: Derived anchor: FF 0.000, precision 1.000, recall 0.670 (10 seeds, hold-out 60/40); F1 0.799 — highest among principled strategies.
+- R2: McNemar: derived vs no_zkc p=0.0009 *** (probe decisive); vs fixed ns — tradeoff axis: zero FF at slightly lower recall.
+- R3: Sensitivity sweep: wide plateau of perfect recall; precision 1.0.
+- R4: Compiler validation vs Qiskit statevector: max |Δp| = 8.9e-16 over 896 states.
+- R5: Hold-out robustness: calibration-free design does not degrade (FF stays 0.000).
+- R6: Drift study: 2/8 days recovered where fixed 0.15 false-fails correct GHZ (fig4).
+- R7: QCEC comparison: 17/18 faults detected on ideal circuits (complementary question).
+- R8: [pending Phase 3] Real-hardware ZKC drift study.
 
 ## 6. The Detectability Frontier
 - Characterize the 20 missed faults: distribution-preserving unitary classes.

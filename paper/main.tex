@@ -1,0 +1,162 @@
+% ============================================================================
+% QFA-LTL: Verification of Noisy Quantum Executions
+% IEEE QCE 2026 submission skeleton
+% ============================================================================
+\documentclass[conference]{IEEEtran}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{algorithmic}
+\usepackage{url}
+\usepackage{cite}
+
+\title{Verification of Noisy Quantum Executions:\\ A Derived, Calibration-Free
+Adaptive Anchor with a Characterized Detectability Frontier}
+
+\author{\IEEEauthorblockN{Y. Agnihotri}
+\IEEEauthorblockA{Research project, IEEE QCE 2026 submission}}
+
+\begin{document}
+\maketitle
+
+% ---------------------------------------------------------------------------
+\begin{abstract}
+Verifying a quantum circuit on NISQ hardware raises a question that classical
+equivalence checking does not answer: \emph{is this run's measured behavior
+acceptable against its temporal specification, given the device's current
+noise?} Static thresholds fail on bad calibration days (false failures) and
+miss faults on good days. We present an oracle-synthesis framework whose
+pass/fail threshold is derived from first principles:
+\begin{equation}
+\tau = p_{\mathrm{ideal}} \cdot (1-\varepsilon)^V - \mathrm{Wilson}_{95\%}(n_{\mathrm{shots}}),
+\label{eq:anchor}
+\end{equation}
+where $p_{\mathrm{ideal}}$ is the exact noise-free probability of the target
+basis state(s) from a validated statevector compiler
+(max $|\Delta p| = 8.9\times10^{-16}$), $\varepsilon$ is the loss measured by
+a Bell-state calibration probe on the circuit's mapped physical qubits, and
+$V$ is the two-qubit-gate volume. The anchor is calibration-free by
+construction: no outcome data from the circuits under test is used.
+
+Over 10 seeds with a 60/40 hold-out split on a 24-circuit suite under
+Brisbane calibration noise, the framework achieves \textbf{0.0\% false-failure
+rate}, \textbf{100\% alarm precision}, and 67\% bug-detection recall. The
+undetected faults are provably measurement-invisible (they preserve the
+target-basis probability distribution). A calibration-drift simulation shows
+the anchor tracking device noise where a fixed $0.15$ threshold false-fails
+correct circuits. A comparison against QCEC (17/18 ideal-circuit detection)
+documents the complementary roles of ideal-unitary correctness versus
+noisy-run acceptability.
+\end{abstract}
+
+% ---------------------------------------------------------------------------
+\section{Introduction}
+\label{sec:intro}
+% Problem: NISQ verification is about noisy measured behavior, not ideal
+% unitaries. Equivalence checking answers "is the circuit right?"; this work
+% answers "is this run acceptable?" — a question equivalence checking cannot
+% answer, because it operates on noise-free semantics.
+% Contributions: (i) derived anchor \eqref{eq:anchor}, (ii) validated exact
+% compiler with truncation bound, (iii) detectability frontier
+% characterization, (iv) open benchmark suite + fault taxonomy.
+% Related work: quantum program testing (metamorphic testing, oracle
+% problem), equivalence checking (QCEC/MQT), statistical verification,
+% LTL monitoring (classical), QFA naming caveat (our automaton is a
+% classical weighted transition system — disambiguate explicitly).
+
+\section{Preliminaries and Related Work}
+\label{sec:related}
+% LTL and monitor automata; windowed Bernoulli predicates.
+% Quantum noise models: depolarizing, readout, calibration data.
+% QCEC / decision diagrams: ideal-unitary correctness.
+% Statistical verification: concentration bounds, Wilson intervals.
+% Position: the adaptive anchor is a *test oracle* for noisy runs.
+
+\section{Framework}
+\label{sec:framework}
+\subsection{Specification language}
+% Grammar: F/G/F<=k/G<=k ( prob(|b1>)+...+prob(|bm>) c t ).
+% Windowed Bernoulli semantics; F vs G acceptance; violating states.
+
+\subsection{The derived anchor}
+\label{sec:anchor}
+% Derivation of \eqref{eq:anchor} from a per-gate depolarizing model:
+% target probability decays as (1-eps)^V; observed rate is a binomial
+% sample of q = p_ideal (1-eps)^V; Wilson lower bound gives the threshold.
+% eps measured by the ZKC Bell probe (4096 shots on mapped qubits).
+% Calibration-free: p_ideal from the compiler, eps from the device.
+
+\subsection{Exact circuit-to-automaton compiler}
+% Statevector tracking; gate handlers; validated vs Qiskit (8.9e-16);
+% truncation with tracked error bound.
+
+\subsection{Verdict pipeline}
+% Metrics: probability / parity / expectation. Direction from spec.
+% Optional gray zone: borderline = needs review.
+% Seeded execution; structured reports.
+
+\section{Benchmark Suite and Protocol}
+\label{sec:benchmark}
+% 6 algorithms x (correct + 3 faults) = 24 circuits; fault catalog.
+% Brisbane noise model via Aer; 1024 shots; 3 reps; 10 seeds;
+% 60/40 hold-out split.
+% Metrics (buggy = positive): recall, precision, false-failure rate.
+
+\section{Results}
+\label{sec:results}
+\begin{table}[t]
+\centering
+\caption{Strategy comparison (10 seeds, hold-out 60/40; mean over seeds).}
+\label{tab:strategies}
+\begin{tabular}{lccc}
+\toprule
+Strategy & FF rate & Recall & Precision \\
+\midrule
+derived (ours) & \textbf{0.000} & 0.670 & \textbf{1.000} \\
+fixed 0.15     & 0.167 & 0.550 & 0.908 \\
+Hoeffding      & 0.000 & 0.428 & 1.000 \\
+Wilson         & 0.000 & 0.528 & 1.000 \\
+no-ZKC ablation & 0.967 & 1.000 & 0.757 \\
+\bottomrule
+\end{tabular}
+\end{table}
+% R1: derived anchor: 0% FF, 100% precision, F1 0.799 (highest among
+%     principled strategies).
+% R2: McNemar: derived vs no_zkc p=0.0009 (probe decisive); vs fixed ns
+%     (tradeoff axis: zero FF at slightly lower recall).
+% R3: sensitivity sweep: wide plateau of perfect recall; precision 1.0.
+% R4: compiler validation: max |dp| = 8.9e-16.
+% R5: hold-out robustness: calibration-free design does not degrade.
+% R6: drift study: 2/8 days recovered where fixed false-fails.
+
+\section{The Detectability Frontier}
+\label{sec:frontier}
+% Proposition sketch: if fault U preserves |<b|U|0>|^2 for all target-
+% relevant b, no measurement-statistics oracle can detect it. Empirical
+% confirmation: QFT phase/swap (uniform spectrum preserved), GHZ
+% entanglement mutations (parity preserved), QAOA wrong-problem.
+% QCEC comparison: 17/18 detected on ideal circuits — documents the
+% complementarity, and validates the suite (faults are real).
+% Implication: phase-sensitive probes (rotated bases, entanglement
+% witnesses) are the future work.
+
+\section{Discussion and Limitations}
+\label{sec:discussion}
+% Simulator-validated; real-device drift study is the decisive next step.
+% The anchor's statistical guarantee structure (Wilson margin) vs a full
+% soundness theorem (Phase 2).
+% Gray-zone tradeoff: protects correct circuits at recall cost.
+% Scope: not equivalence checking, not post-classical verification.
+
+\section{Conclusion}
+\label{sec:conclusion}
+
+% ---------------------------------------------------------------------------
+\section*{Acknowledgment}
+% None.
+
+\bibliographystyle{IEEEtran}
+% \bibliography{refs}
+
+\end{document}
