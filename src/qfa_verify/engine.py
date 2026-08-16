@@ -123,8 +123,8 @@ class UniversalVerifier:
 
     def _calculate_adaptive_anchor(self, circuit, calibration_loss):
         """Industry-Standard Volume-Based Scaling."""
-        ops = circuit.count_ops()
-        n_2q = sum(ops.get(gate, 0) for gate in ['cx', 'cz', 'ecr', 'ccx', 'cp'])
+        from src.qfa_verify.thresholds import count_2q_gates
+        n_2q = count_2q_gates(circuit)
         width = circuit.num_qubits
         
         effective_volume = n_2q + (width * 0.1)

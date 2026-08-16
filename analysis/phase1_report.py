@@ -1,6 +1,10 @@
 import json
+import glob
+import os
 
-data = json.load(open('outputs/phase1/phase1_results_20260816_211721.json'))
+files = sorted(glob.glob('outputs/phase1/phase1_results_*.json'), key=os.path.getmtime)
+data = json.load(open(files[-1]))
+print(f'Using: {files[-1]}')
 agg = data['aggregated']
 
 print('='*70)
@@ -8,7 +12,9 @@ print('PHASE 1 RESULTS — 10 seeds x 5 strategies x 24 circuits x 3 reps')
 print('='*70)
 print(f'{"Strategy":<15} {"Recall":>10} {"Precision":>10} {"False-Fail":>10} {"F1":>10}')
 print('-'*55)
-for name in ['adaptive_zkc', 'fixed', 'hoeffding', 'wilson', 'no_zkc']:
+for name in ['derived', 'adaptive_zkc', 'fixed', 'hoeffding', 'wilson', 'no_zkc']:
+    if name not in agg:
+        continue
     a = agg[name]
     r = f'{a["recall_mean"]:.3f} ({a["recall_ci"][0]:.3f}-{a["recall_ci"][1]:.3f})'
     p = f'{a["precision_mean"]:.3f} ({a["precision_ci"][0]:.3f}-{a["precision_ci"][1]:.3f})'
@@ -18,7 +24,7 @@ for name in ['adaptive_zkc', 'fixed', 'hoeffding', 'wilson', 'no_zkc']:
 
 print()
 print('='*70)
-print('McNemar TESTS (adaptive_zkc vs baselines)')
+print('McNemar TESTS (derived vs baselines)')
 print('='*70)
 
 # Re-run McNemar from raw results
@@ -48,14 +54,19 @@ def mcnemar_test(results_a, results_b):
     return {'statistic': statistic, 'p_value': p_value, 'a_wins': a_wins, 'b_wins': b_wins}
 
 raw = data['raw']
+primary = 'derived' if 'derived' in raw else 'adaptive_zkc'
+print(f'Primary strategy: {primary}')
+
 adaptive_results = []
-for seed in raw['adaptive_zkc'].values():
+for seed in raw[primary].values():
     adaptive_results.extend(seed)
 
 for strat_name in ['fixed', 'hoeffding', 'wilson', 'no_zkc']:
+    if strat_name not in raw:
+        continue
     baseline_results = []
     for seed in raw[strat_name].values():
         baseline_results.extend(seed)
     test = mcnemar_test(adaptive_results, baseline_results)
     sig = "***" if test['p_value'] < 0.001 else "**" if test['p_value'] < 0.01 else "*" if test['p_value'] < 0.05 else "ns"
-    print(f'adaptive_zkc vs {strat_name:<12s}: p={test["p_value"]:.4f} {sig}  (adaptive wins {test["a_wins"]}, baseline wins {test["b_wins"]})')
+    print(f'{primary} vs {strat_name:<12s}: p={test["p_value"]:.4f} {sig}  (primary wins {test["a_wins"]}, baseline wins {test["b_wins"]})')

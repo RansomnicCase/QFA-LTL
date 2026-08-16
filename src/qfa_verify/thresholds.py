@@ -16,6 +16,18 @@ from typing import Dict, List, Optional
 import numpy as np
 from collections import defaultdict
 
+# All two-qubit gate names that contribute to circuit volume.
+TWO_QUBIT_GATES = ['cx', 'cz', 'ecr', 'ccx', 'cp', 'rzz', 'swap', 'iswap', 'csx', 'ch']
+
+
+def count_2q_gates(circuit) -> int:
+    """Count two-qubit gates in a circuit (handles count_ops dict or circuit)."""
+    if hasattr(circuit, 'count_ops'):
+        ops = circuit.count_ops()
+    else:
+        ops = circuit
+    return sum(ops.get(g, 0) for g in TWO_QUBIT_GATES)
+
 
 class ThresholdStrategy(ABC):
     """Base class for threshold computation strategies."""
@@ -50,8 +62,7 @@ class AdaptiveZKC(ThresholdStrategy):
     def compute_threshold(self, algo, metric_values, circuit=None, noise_estimate=None):
         if circuit is None or noise_estimate is None:
             return 0.15  # fallback
-        ops = circuit.count_ops()
-        n_2q = sum(ops.get(g, 0) for g in ['cx', 'cz', 'ecr', 'ccx', 'cp'])
+        n_2q = count_2q_gates(circuit)
         width = circuit.num_qubits
         effective_volume = n_2q + (width * 0.1)
         error_rate = max(0.001, noise_estimate)
@@ -131,8 +142,7 @@ class NoZKC(ThresholdStrategy):
     def compute_threshold(self, algo, metric_values, circuit=None, noise_estimate=None):
         if circuit is None:
             return 0.15
-        ops = circuit.count_ops()
-        n_2q = sum(ops.get(g, 0) for g in ['cx', 'cz', 'ecr', 'ccx', 'cp'])
+        n_2q = count_2q_gates(circuit)
         width = circuit.num_qubits
         effective_volume = n_2q + (width * 0.1)
         error_rate = self.fixed_epsilon
@@ -140,9 +150,57 @@ class NoZKC(ThresholdStrategy):
         return max(self.floor, anchor)
 
 
+class DerivedAnchor(ThresholdStrategy):
+    """Principled anchor derived from the noise model (WS-1).
+
+    threshold = p_ideal x (1 - epsilon)^V - Wilson_margin
+
+    - p_ideal: ideal probability of the target state(s), computed by the
+      exact circuit compiler (no peeking at noisy runs)
+    - epsilon: ZKC probe loss on the mapped qubits
+    - V: gate volume (n_2q + 0.1 x width)
+    - Wilson margin: lower bound of the 95% CI on observing the expected
+      success rate, given the shot budget
+
+    This is the honest form of the old heuristic: the old formula assumed
+    p_ideal = 1, which is why it false-failed uniform-output circuits
+    (QFT, QAOA). Derivation: under a per-gate depolarizing model, the
+    target probability decays as (1-eps)^V; the observed success rate is a
+    binomial sample of q = p_ideal x (1-eps)^V; a run whose measured rate
+    falls below the Wilson lower bound of q is statistically suspicious.
+    """
+
+    name = "derived"
+
+    def __init__(self, z: float = 1.96, min_floor: float = 0.01):
+        self.z = z
+        self.min_floor = min_floor
+
+    def compute_threshold(self, algo, metric_values, circuit=None, noise_estimate=None,
+                          p_ideal: Optional[float] = None, n_shots: int = 1024):
+        if circuit is None or noise_estimate is None or p_ideal is None:
+            return 0.15
+        n_2q = count_2q_gates(circuit)
+        width = circuit.num_qubits
+        effective_volume = n_2q + (width * 0.1)
+        error_rate = max(0.001, noise_estimate)
+        expected = p_ideal * ((1.0 - error_rate) ** effective_volume)
+
+        # Wilson statistical margin on the expected success rate
+        n = max(1, n_shots)
+        z = self.z
+        p = max(0.001, expected)
+        denom = 1 + z**2 / n
+        center = (p + z**2 / (2*n)) / denom
+        margin = (z / denom) * np.sqrt(p*(1-p)/n + z**2/(4*n**2))
+        threshold = expected - margin
+        return max(self.min_floor, threshold)
+
+
 # Registry
 STRATEGIES = {
     "adaptive_zkc": AdaptiveZKC,
+    "derived": DerivedAnchor,
     "fixed": FixedThreshold,
     "hoeffding": HoeffdingBound,
     "wilson": WilsonBound,
