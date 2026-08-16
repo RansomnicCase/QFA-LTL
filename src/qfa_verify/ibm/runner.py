@@ -18,7 +18,8 @@ class IBMJobResult:
     error_message: Optional[str] = None
 
 class IBMRunner:
-    def __init__(self, token=None, instance=None):
+    def __init__(self, token=None, instance=None, seed: Optional[int] = None):
+        self.seed = seed
         self.service = None
         if token:
             try:

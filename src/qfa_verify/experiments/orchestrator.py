@@ -8,6 +8,8 @@ import numpy as np
 # Internal Imports
 from ..ibm.runner import IBMRunner, SimulatorRunner, IBMJobResult
 from ..experiments.benchmarks import BenchmarkSuite
+from ..thresholds import ThresholdStrategy, AdaptiveZKC, get_strategy
+
 
 class SafetyOrchestrator:
     def __init__(self, backend="fake_brisbane", use_ibm: bool = False, token: Optional[str] = None, seed: Optional[int] = None):
@@ -26,7 +28,7 @@ class SafetyOrchestrator:
         self.results_dir.mkdir(parents=True, exist_ok=True)
         
         # Dynamic Target Memory
-        self.learned_targets = {} 
+        self.learned_targets = {}
 
     def run_full_stack(self, circuit, ltl_spec):
         """
@@ -63,10 +65,30 @@ class SafetyOrchestrator:
             "threshold": threshold
         }
 
-    def run_full_suite(self, backends: List[str], shots: int = 1024, reps: int = 5):
-        """Main Execution Loop for the full research battery."""
+    def run_full_suite(self, backends: List[str], shots: int = 1024, reps: int = 5,
+                       strategy: Union[str, ThresholdStrategy] = "adaptive_zkc",
+                       holdout_fraction: float = 0.0,
+                       seed: Optional[int] = None):
+        """Main Execution Loop for the full research battery.
+
+        Args:
+            backends: list of backend names
+            shots: shots per execution
+            reps: repetitions per circuit
+            strategy: threshold strategy (name or instance)
+            holdout_fraction: fraction of correct circuits to use for calibration (0 = in-sample)
+            seed: random seed (overrides constructor seed)
+        """
+        if seed is not None:
+            self.seed = seed
+            self.runner.seed = seed
+
+        if isinstance(strategy, str):
+            strategy = get_strategy(strategy)
+        
         print("="*60)
-        print("🚀 STARTING QFA-LTL EXPERIMENT SUITE")
+        print(f"🚀 STARTING QFA-LTL EXPERIMENT SUITE")
+        print(f"   Strategy: {strategy.name} | Hold-out: {holdout_fraction:.0%} | Seed: {self.seed}")
         print("="*60)
         
         suite_obj = BenchmarkSuite()
@@ -76,15 +98,18 @@ class SafetyOrchestrator:
         for backend in backends:
             results = self.runner.execute_benchmark(circuits, backend_name=backend, shots=shots, reps=reps)
             self._learn_targets(results)
-            thresholds = self._diagnose_and_get_thresholds(results)
+            
+            # Compute thresholds using the strategy
+            thresholds = self._diagnose_and_get_thresholds(results, strategy, suite_obj, holdout_fraction)
             eval_results = self._evaluate_with_thresholds(results, thresholds)
             
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            filename = self.results_dir / f"{backend}_{timestamp}.json"
+            filename = self.results_dir / f"{backend}_{strategy.name}_{timestamp}.json"
             self._save_eval_results(eval_results, filename)
             all_results_buffer.extend(eval_results)
 
         self._generate_report(all_results_buffer)
+        return all_results_buffer
 
     def _clean_counts(self, counts: Dict) -> Dict[str, int]:
         return {k.replace(" ", ""): v for k, v in counts.items()}
@@ -112,7 +137,13 @@ class SafetyOrchestrator:
             return sum(counts.get(t, 0) for t in target) / total
         return counts.get(target, 0) / total if target else max(counts.values())/total
 
-    def _diagnose_and_get_thresholds(self, results: List[IBMJobResult]) -> Dict:
+    def _diagnose_and_get_thresholds(self, results: List[IBMJobResult], strategy: ThresholdStrategy,
+                                     suite_obj: Optional[BenchmarkSuite] = None, holdout_fraction: float = 0.0) -> Dict:
+        """Compute thresholds using the given strategy.
+
+        If holdout_fraction > 0, correct circuits are split into calibration and test sets.
+        The threshold is computed from the calibration set only, then applied to the test set.
+        """
         by_algo = defaultdict(lambda: {'correct': [], 'buggy': []})
         for res in results:
             if not res.success: continue
@@ -125,8 +156,31 @@ class SafetyOrchestrator:
 
         thresholds = {}
         for algo, data in by_algo.items():
-            if not data['correct']: thresholds[algo] = 0.15
-            else: thresholds[algo] = min(data['correct']) * 0.95
+            correct_vals = data['correct']
+            if not correct_vals:
+                thresholds[algo] = 0.15
+                continue
+
+            if holdout_fraction > 0 and len(correct_vals) > 1:
+                # Hold-out: use a fraction of correct circuits for calibration
+                n_cal = max(1, int(len(correct_vals) * (1 - holdout_fraction)))
+                cal_vals = correct_vals[:n_cal]
+            else:
+                cal_vals = correct_vals
+
+            # Get a representative circuit for volume-based strategies
+            circuit = None
+            noise_estimate = None
+            if suite_obj and hasattr(suite_obj, 'circuits'):
+                for item in suite_obj.circuits:
+                    if item['name'] == f'{algo}_correct':
+                        circuit = item['circuit']
+                        break
+            if isinstance(strategy, AdaptiveZKC):
+                # Use mean of correct values as a proxy for noise estimate
+                noise_estimate = float(max(0.001, 1.0 - np.mean(cal_vals)))
+
+            thresholds[algo] = strategy.compute_threshold(algo, cal_vals, circuit, noise_estimate)
         return thresholds
 
     def _evaluate_with_thresholds(self, results: List[IBMJobResult], thresholds: Dict) -> List[Dict]:
@@ -175,4 +229,4 @@ class SafetyOrchestrator:
         for base in sorted(by_algo):
             b = by_algo[base]
             print(f"     {base:8s} correct {b['correct_pass']}/{b['correct_pass']+b['correct_fail']} pass | "
-                  f"buggy {b['buggy_fail']}/{b['buggy_pass']+b['buggy_fail']} caught")
+                  f"buggy {b['buggy_fail']}/{b['buggy_pass']+b['buggy_fail']} caught)")

@@ -1,0 +1,1613 @@
+{
+  "config": {
+    "seeds": [
+      42,
+      43
+    ],
+    "strategies": [
+      "adaptive_zkc",
+      "fixed"
+    ],
+    "shots": 512,
+    "reps": 2,
+    "holdout": 0.0
+  },
+  "aggregated": {
+    "adaptive_zkc": {
+      "n_seeds": 2,
+      "recall_mean": 0.8333333333333334,
+      "recall_ci": [
+        0.8333333333333334,
+        0.8333333333333334
+      ],
+      "precision_mean": 0.8823529411764706,
+      "precision_ci": [
+        0.8823529411764706,
+        0.8823529411764706
+      ],
+      "false_failure_rate_mean": 0.3333333333333333,
+      "false_failure_rate_ci": [
+        0.3333333333333333,
+        0.3333333333333333
+      ],
+      "f1_mean": 0.8571428571428571,
+      "f1_ci": [
+        0.8571428571428571,
+        0.8571428571428571
+      ]
+    },
+    "fixed": {
+      "n_seeds": 2,
+      "recall_mean": 0.5555555555555556,
+      "recall_ci": [
+        0.5555555555555556,
+        0.5555555555555556
+      ],
+      "precision_mean": 0.9090909090909091,
+      "precision_ci": [
+        0.9090909090909091,
+        0.9090909090909091
+      ],
+      "false_failure_rate_mean": 0.16666666666666666,
+      "false_failure_rate_ci": [
+        0.16666666666666666,
+        0.16666666666666666
+      ],
+      "f1_mean": 0.6896551724137931,
+      "f1_ci": [
+        0.6896551724137931,
+        0.6896551724137931
+      ]
+    }
+  },
+  "raw": {
+    "adaptive_zkc": {
+      "42": [
+        {
+          "circuit": "grover_correct",
+          "passed": true,
+          "is_buggy": false,
+          "metric_value": 0.966796875,
+          "threshold": 0.909837010591508,
+          "true_positive": true
+        },
+        {
+          "circuit": "grover_correct",
+          "passed": true,
+          "is_buggy": false,
+          "metric_value": 0.966796875,
+          "threshold": 0.909837010591508,
+          "true_positive": true
+        },
+        {
+          "circuit": "grover_missing_diffusion",
+          "passed": false,
+          "is_buggy": true,
+          "metric_value": 0.224609375,
+          "threshold": 0.909837010591508,
+          "true_positive": false
+        },
+        {
+          "circuit": "grover_missing_diffusion",
+          "passed": false,
+          "is_buggy": true,
+          "metric_value": 0.224609375,
+          "threshold": 0.909837010591508,
+          "true_positive": false
+        },
+        {
+          "circuit": "grover_wrong_oracle",
+          "passed": false,
+          "is_buggy": true,
+          "metric_value": 0.001953125,
+          "threshold": 0.909837010591508,
+          "true_positive": false
+        },
+        {
+          "circuit": "grover_wrong_oracle",
+          "passed": false,
+          "is_buggy": true,
+          "metric_value": 0.001953125,
+          "threshold": 0.909837010591508,
+          "true_positive": false
+        },
+        {
+          "circuit": "grover_wrong_angle",
+          "passed": false,
+          "is_buggy": true,
+          "metric_value": 0.8046875,
+          "threshold": 0.909837010591508,
+          "true_positive": false
+        },
+        {
+          "circuit": "grover_wrong_angle",
+          "passed": false,
+          "is_buggy": true,
+          "metric_value": 0.8046875,
+          "threshold": 0.909837010591508,
+          "true_positive": false
+        },
+        {
+          "circuit": "bv_correct",
+          "passed": true,
+          "is_buggy": false,
+          "metric_value": 0.953125,
+          "threshold": 0.869161995335928,
+          "true_positive": true
+        },
+        {
+          "circuit": "bv_correct",
+          "passed": true,
+          "is_buggy": false,
+          "metric_value": 0.953125,
+          "threshold": 0.869161995335928,
+          "true_positive": true
+        },
+        {
+          "circuit": "bv_wrong_secret",
+          "passed": false,
+          "is_buggy": true,
+          "metric_value": 0.0,
+          "threshold": 0.869161995335928,
+          "true_positive": false
+        },
+        {
+          "circuit": "bv_wrong_secret",
+          "passed": false,
+          "is_buggy": true,
+          "metric_value": 0.0,
+          "threshold": 0.869161995335928,
+          "true_positive": false
+        },
+        {
+          "circuit": "bv_missing_hadamard",
+          "passed": false,
+          "is_buggy": true,
+          "metric_value": 0.052734375,
+          "threshold": 0.869161995335928,
+          "true_positive": false
+        },
+        {
+          "circuit": "bv_missing_hadamard",
+          "passed": false,
+          "is_buggy": true,
+          "metric_value": 0.052734375,
+          "threshold": 0.869161995335928,
+          "true_positive": false
+        },
+        {
+          "circuit": "bv_wrong_cnot",
+          "passed": false,
+          "is_buggy": true,
+          "metric_value": 0.009765625,
+          "threshold": 0.869161995335928,
+          "true_positive": false
+        },
+        {
+          "circuit": "bv_wrong_cnot",
+          "passed": false,
+          "is_buggy": true,
+          "metric_value": 0.009765625,
+          "threshold": 0.869161995335928,
+          "true_positive": false
+        },
+        {
+          "circuit": "qft_correct",
+          "passed": false,
+          "is_buggy": false,
+          "metric_value": 0.048828125,
+          "threshold": 0.1,
+          "true_positive": false
+        },
+        {
+          "circuit": "qft_correct",
+          "passed": false,
+          "is_buggy": false,
+          "metric_value": 0.0859375,
+          "threshold": 0.1,
+          "true_positive": false
+        },
+        {
+          "circuit": "qft_missing_swap",
+          "passed": false,
+          "is_buggy": true,
+          "metric_value": 0.044921875,
+          "threshold": 0.1,
+          "true_positive": false
+        },
+        {
+          "circuit": "qft_missing_swap",
+          "passed": false,
+          "is_buggy": true,
+          "metric_value": 0.060546875,
+          "threshold": 0.1,
+          "true_positive": false
+        },
+        {
+          "circuit": "qft_wrong_phase",
+          "passed": false,
+          "is_buggy": true,
+          "metric_value": 0.048828125,
+          "threshold": 0.1,
+          "true_positive": false
+        },
+        {
+          "circuit": "qft_wrong_phase",
+          "passed": false,
+          "is_buggy": true,
+          "metric_value": 0.0859375,
+          "threshold": 0.1,
+          "true_positive": false
+        },
+        {
+          "circuit": "qft_missing_h",
+          "passed": false,
+          "is_buggy": true,
+          "metric_value": 0.001953125,
+          "threshold": 0.1,
+          "true_positive": false
+        },
+        {
+          "circuit": "qft_missing_h",
+          "passed": false,
+          "is_buggy": true,
+          "metric_value": 0.001953125,
+          "threshold": 0.1,
+          "true_positive": false
+        },
+        {
+          "circuit": "ghz_correct",
+          "passed": true,
+          "is_buggy": false,
+          "metric_value": 0.8359375,
+          "threshold": 0.4010754535247619,
+          "true_positive": true
+        },
+        {
+          "circuit": "ghz_correct",
+          "passed": true,
+          "is_buggy": false,
+          "metric_value": 0.869140625,
+          "threshold": 0.4010754535247619,
+          "true_positive": true
+        },
+        {
+          "circuit": "ghz_missing_cnot",
+          "passed": true,
+          "is_buggy": true,
+          "metric_value": 0.48046875,
+          "threshold": 0.4010754535247619,
+          "true_positive": false
+        },
+        {
+          "circuit": "ghz_missing_cnot",
+          "passed": true,
+          "is_buggy": true,
+          "metric_value": 0.48046875,
+          "threshold": 0.4010754535247619,
+          "true_positive": false
+        },
+        {
+          "circuit": "ghz_wrong_entanglement",
+          "passed": true,
+          "is_buggy": true,
+          "metric_value": 0.91796875,
+          "threshold": 0.4010754535247619,
+          "true_positive": false
+        },
+        {
+          "circuit": "ghz_wrong_entanglement",
+          "passed": true,
+          "is_buggy": true,
+          "metric_value": 0.91796875,
+          "threshold": 0.4010754535247619,
+          "true_positive": false
+        },
+        {
+          "circuit": "ghz_decoherence",
+          "passed": true,
+          "is_buggy": true,
+          "metric_value": 0.84375,
+          "threshold": 0.4010754535247619,
+          "true_positive": false
+        },
+        {
+          "circuit": "ghz_decoherence",
+          "passed": true,
+          "is_buggy": true,
+          "metric_value": 0.873046875,
+          "threshold": 0.4010754535247619,
+          "true_positive": false
+        },
+        {
+          "circuit": "qaoa_correct",
+          "passed": false,
+          "is_buggy": false,
+          "metric_value": 0.47265625,
+          "threshold": 0.7273787358135579,
+          "true_positive": false
+        },
+        {
+          "circuit": "qaoa_correct",
+          "passed": false,
+          "is_buggy": false,
+          "metric_value": 0.4765625,
+          "threshold": 0.7273787358135579,
+          "true_positive": false
+        },
+        {
+          "circuit": "qaoa_wrong_gamma",
+          "passed": false,
+          "is_buggy": true,
+          "metric_value": 0.068359375,
+          "threshold": 0.7273787358135579,
+          "true_positive": false
+        },
+        {
+          "circuit": "qaoa_wrong_gamma",
+          "passed": false,
+          "is_buggy": true,
+          "metric_value": 0.060546875,
+          "threshold": 0.7273787358135579,
+          "true_positive": false
+        },
+        {
+          "circuit": "qaoa_insufficient_depth",
+          "passed": false,
+          "is_buggy": true,
+          "metric_value": 0.3125,
+          "threshold": 0.7273787358135579,
+          "true_positive": false
+        },
+        {
+          "circuit": "qaoa_insufficient_depth",
+          "passed": false,
+          "is_buggy": true,
+          "metric_value": 0.306640625,
+          "threshold": 0.7273787358135579,
+          "true_positive": false
+        },
+        {
+          "circuit": "qaoa_wrong_problem",
+          "passed": false,
+          "is_buggy": true,
+          "metric_value": 0.353515625,
+          "threshold": 0.7273787358135579,
+          "true_positive": false
+        },
+        {
+          "circuit": "qaoa_wrong_problem",
+          "passed": false,
+          "is_buggy": true,
+          "metric_value": 0.353515625,
+          "threshold": 0.7273787358135579,
+          "true_positive": false
+        },
+        {
+          "circuit": "dj_correct",
+          "passed": true,
+          "is_buggy": false,
+          "metric_value": 0.974609375,
+          "threshold": 0.9237116485804358,
+          "true_positive": true
+        },
+        {
+          "circuit": "dj_correct",
+          "passed": true,
+          "is_buggy": false,
+          "metric_value": 0.974609375,
+          "threshold": 0.9237116485804358,
+          "true_positive": true
+        },
+        {
+          "circuit": "dj_constant_function",
+          "passed": false,
+          "is_buggy": true,
+          "metric_value": 0.0,
+          "threshold": 0.9237116485804358,
+          "true_positive": false
+        },
+        {
+          "circuit": "dj_constant_function",
+          "passed": false,
+          "is_buggy": true,
+          "metric_value": 0.0,
+          "threshold": 0.9237116485804358,
+          "true_positive": false
+        },
+        {
+          "circuit": "dj_wrong_measurement",
+          "passed": false,
+          "is_buggy": true,
+          "metric_value": 0.263671875,
+          "threshold": 0.9237116485804358,
+          "true_positive": false
+        },
+        {
+          "circuit": "dj_wrong_measurement",
+          "passed": false,
+          "is_buggy": true,
+          "metric_value": 0.263671875,
+          "threshold": 0.9237116485804358,
+          "true_positive": false
+        },
+        {
+          "circuit": "dj_incomplete_oracle",
+          "passed": false,
+          "is_buggy": true,
+          "metric_value": 0.00390625,
+          "threshold": 0.9237116485804358,
+          "true_positive": false
+        },
+        {
+          "circuit": "dj_incomplete_oracle",
+          "passed": false,
+          "is_buggy": true,
+          "metric_value": 0.00390625,
+          "threshold": 0.9237116485804358,
+          "true_positive": false
+        }
+      ],
+      "43": [
+        {
+          "circuit": "grover_correct",
+          "passed": true,
+          "is_buggy": false,
+          "metric_value": 0.953125,
+          "threshold": 0.8817709156565018,
+          "true_positive": true
+        },
+        {
+          "circuit": "grover_correct",
+          "passed": true,
+          "is_buggy": false,
+          "metric_value": 0.953125,
+          "threshold": 0.8817709156565018,
+          "true_positive": true
+        },
+        {
+          "circuit": "grover_missing_diffusion",
+          "passed": false,
+          "is_buggy": true,
+          "metric_value": 0.25,
+          "threshold": 0.8817709156565018,
+          "true_positive": false
+        },
+        {
+          "circuit": "grover_missing_diffusion",
+          "passed": false,
+          "is_buggy": true,
+          "metric_value": 0.25,
+          "threshold": 0.8817709156565018,
+          "true_positive": false
+        },
+        {
+          "circuit": "grover_wrong_oracle",
+          "passed": false,
+          "is_buggy": true,
+          "metric_value": 0.00390625,
+          "threshold": 0.8817709156565018,
+          "true_positive": false
+        },
+        {
+          "circuit": "grover_wrong_oracle",
+          "passed": false,
+          "is_buggy": true,
+          "metric_value": 0.00390625,
+          "threshold": 0.8817709156565018,
+          "true_positive": false
+        },
+        {
+          "circuit": "grover_wrong_angle",
+          "passed": false,
+          "is_buggy": true,
+          "metric_value": 0.806640625,
+          "threshold": 0.8817709156565018,
+          "true_positive": false
+        },
+        {
+          "circuit": "grover_wrong_angle",
+          "passed": false,
+          "is_buggy": true,
+          "metric_value": 0.806640625,
+          "threshold": 0.8817709156565018,
+          "true_positive": false
+        },
+        {
+          "circuit": "bv_correct",
+          "passed": true,
+          "is_buggy": false,
+          "metric_value": 0.94140625,
+          "threshold": 0.8426918017604912,
+          "true_positive": true
+        },
+        {
+          "circuit": "bv_correct",
+          "passed": true,
+          "is_buggy": false,
+          "metric_value": 0.94140625,
+          "threshold": 0.8426918017604912,
+          "true_positive": true
+        },
+        {
+          "circuit": "bv_wrong_secret",
+          "passed": false,
+          "is_buggy": true,
+          "metric_value": 0.0,
+          "threshold": 0.8426918017604912,
+          "true_positive": false
+        },
+        {
+          "circuit": "bv_wrong_secret",
+          "passed": false,
+          "is_buggy": true,
+          "metric_value": 0.0,
+          "threshold": 0.8426918017604912,
+          "true_positive": false
+        },
+        {
+          "circuit": "bv_missing_hadamard",
+          "passed": false,
+          "is_buggy": true,
+          "metric_value": 0.0546875,
+          "threshold": 0.8426918017604912,
+          "true_positive": false
+        },
+        {
+          "circuit": "bv_missing_hadamard",
+          "passed": false,
+          "is_buggy": true,
+          "metric_value": 0.0546875,
+          "threshold": 0.8426918017604912,
+          "true_positive": false
+        },
+        {
+          "circuit": "bv_wrong_cnot",
+          "passed": false,
+          "is_buggy": true,
+          "metric_value": 0.00390625,
+          "threshold": 0.8426918017604912,
+          "true_positive": false
+        },
+        {
+          "circuit": "bv_wrong_cnot",
+          "passed": false,
+          "is_buggy": true,
+          "metric_value": 0.00390625,
+          "threshold": 0.8426918017604912,
+          "true_positive": false
+        },
+        {
+          "circuit": "qft_correct",
+          "passed": false,
+          "is_buggy": false,
+          "metric_value": 0.083984375,
+          "threshold": 0.1,
+          "true_positive": false
+        },
+        {
+          "circuit": "qft_correct",
+          "passed": false,
+          "is_buggy": false,
+          "metric_value": 0.08984375,
+          "threshold": 0.1,
+          "true_positive": false
+        },
+        {
+          "circuit": "qft_missing_swap",
+          "passed": false,
+          "is_buggy": true,
+          "metric_value": 0.064453125,
+          "threshold": 0.1,
+          "true_positive": false
+        },
+        {
+          "circuit": "qft_missing_swap",
+          "passed": false,
+          "is_buggy": true,
+          "metric_value": 0.083984375,
+          "threshold": 0.1,
+          "true_positive": false
+        },
+        {
+          "circuit": "qft_wrong_phase",
+          "passed": false,
+          "is_buggy": true,
+          "metric_value": 0.06640625,
+          "threshold": 0.1,
+          "true_positive": false
+        },
+        {
+          "circuit": "qft_wrong_phase",
+          "passed": false,
+          "is_buggy": true,
+          "metric_value": 0.072265625,
+          "threshold": 0.1,
+          "true_positive": false
+        },
+        {
+          "circuit": "qft_missing_h",
+          "passed": false,
+          "is_buggy": true,
+          "metric_value": 0.0078125,
+          "threshold": 0.1,
+          "true_positive": false
+        },
+        {
+          "circuit": "qft_missing_h",
+          "passed": false,
+          "is_buggy": true,
+          "metric_value": 0.00390625,
+          "threshold": 0.1,
+          "true_positive": false
+        },
+        {
+          "circuit": "ghz_correct",
+          "passed": true,
+          "is_buggy": false,
+          "metric_value": 0.83203125,
+          "threshold": 0.3569082287303741,
+          "true_positive": true
+        },
+        {
+          "circuit": "ghz_correct",
+          "passed": true,
+          "is_buggy": false,
+          "metric_value": 0.837890625,
+          "threshold": 0.3569082287303741,
+          "true_positive": true
+        },
+        {
+          "circuit": "ghz_missing_cnot",
+          "passed": true,
+          "is_buggy": true,
+          "metric_value": 0.490234375,
+          "threshold": 0.3569082287303741,
+          "true_positive": false
+        },
+        {
+          "circuit": "ghz_missing_cnot",
+          "passed": true,
+          "is_buggy": true,
+          "metric_value": 0.490234375,
+          "threshold": 0.3569082287303741,
+          "true_positive": false
+        },
+        {
+          "circuit": "ghz_wrong_entanglement",
+          "passed": true,
+          "is_buggy": true,
+          "metric_value": 0.88671875,
+          "threshold": 0.3569082287303741,
+          "true_positive": false
+        },
+        {
+          "circuit": "ghz_wrong_entanglement",
+          "passed": true,
+          "is_buggy": true,
+          "metric_value": 0.88671875,
+          "threshold": 0.3569082287303741,
+          "true_positive": false
+        },
+        {
+          "circuit": "ghz_decoherence",
+          "passed": true,
+          "is_buggy": true,
+          "metric_value": 0.845703125,
+          "threshold": 0.3569082287303741,
+          "true_positive": false
+        },
+        {
+          "circuit": "ghz_decoherence",
+          "passed": true,
+          "is_buggy": true,
+          "metric_value": 0.833984375,
+          "threshold": 0.3569082287303741,
+          "true_positive": false
+        },
+        {
+          "circuit": "qaoa_correct",
+          "passed": false,
+          "is_buggy": false,
+          "metric_value": 0.4921875,
+          "threshold": 0.7380372935973016,
+          "true_positive": false
+        },
+        {
+          "circuit": "qaoa_correct",
+          "passed": false,
+          "is_buggy": false,
+          "metric_value": 0.4921875,
+          "threshold": 0.7380372935973016,
+          "true_positive": false
+        },
+        {
+          "circuit": "qaoa_wrong_gamma",
+          "passed": false,
+          "is_buggy": true,
+          "metric_value": 0.087890625,
+          "threshold": 0.7380372935973016,
+          "true_positive": false
+        },
+        {
+          "circuit": "qaoa_wrong_gamma",
+          "passed": false,
+          "is_buggy": true,
+          "metric_value": 0.087890625,
+          "threshold": 0.7380372935973016,
+          "true_positive": false
+        },
+        {
+          "circuit": "qaoa_insufficient_depth",
+          "passed": false,
+          "is_buggy": true,
+          "metric_value": 0.2890625,
+          "threshold": 0.7380372935973016,
+          "true_positive": false
+        },
+        {
+          "circuit": "qaoa_insufficient_depth",
+          "passed": false,
+          "is_buggy": true,
+          "metric_value": 0.2890625,
+          "threshold": 0.7380372935973016,
+          "true_positive": false
+        },
+        {
+          "circuit": "qaoa_wrong_problem",
+          "passed": false,
+          "is_buggy": true,
+          "metric_value": 0.34375,
+          "threshold": 0.7380372935973016,
+          "true_positive": false
+        },
+        {
+          "circuit": "qaoa_wrong_problem",
+          "passed": false,
+          "is_buggy": true,
+          "metric_value": 0.34375,
+          "threshold": 0.7380372935973016,
+          "true_positive": false
+        },
+        {
+          "circuit": "dj_correct",
+          "passed": true,
+          "is_buggy": false,
+          "metric_value": 0.955078125,
+          "threshold": 0.8816892413620709,
+          "true_positive": true
+        },
+        {
+          "circuit": "dj_correct",
+          "passed": true,
+          "is_buggy": false,
+          "metric_value": 0.955078125,
+          "threshold": 0.8816892413620709,
+          "true_positive": true
+        },
+        {
+          "circuit": "dj_constant_function",
+          "passed": false,
+          "is_buggy": true,
+          "metric_value": 0.001953125,
+          "threshold": 0.8816892413620709,
+          "true_positive": false
+        },
+        {
+          "circuit": "dj_constant_function",
+          "passed": false,
+          "is_buggy": true,
+          "metric_value": 0.001953125,
+          "threshold": 0.8816892413620709,
+          "true_positive": false
+        },
+        {
+          "circuit": "dj_wrong_measurement",
+          "passed": false,
+          "is_buggy": true,
+          "metric_value": 0.234375,
+          "threshold": 0.8816892413620709,
+          "true_positive": false
+        },
+        {
+          "circuit": "dj_wrong_measurement",
+          "passed": false,
+          "is_buggy": true,
+          "metric_value": 0.234375,
+          "threshold": 0.8816892413620709,
+          "true_positive": false
+        },
+        {
+          "circuit": "dj_incomplete_oracle",
+          "passed": false,
+          "is_buggy": true,
+          "metric_value": 0.01171875,
+          "threshold": 0.8816892413620709,
+          "true_positive": false
+        },
+        {
+          "circuit": "dj_incomplete_oracle",
+          "passed": false,
+          "is_buggy": true,
+          "metric_value": 0.01171875,
+          "threshold": 0.8816892413620709,
+          "true_positive": false
+        }
+      ]
+    },
+    "fixed": {
+      "42": [
+        {
+          "circuit": "grover_correct",
+          "passed": true,
+          "is_buggy": false,
+          "metric_value": 0.966796875,
+          "threshold": 0.15,
+          "true_positive": true
+        },
+        {
+          "circuit": "grover_correct",
+          "passed": true,
+          "is_buggy": false,
+          "metric_value": 0.966796875,
+          "threshold": 0.15,
+          "true_positive": true
+        },
+        {
+          "circuit": "grover_missing_diffusion",
+          "passed": true,
+          "is_buggy": true,
+          "metric_value": 0.224609375,
+          "threshold": 0.15,
+          "true_positive": false
+        },
+        {
+          "circuit": "grover_missing_diffusion",
+          "passed": true,
+          "is_buggy": true,
+          "metric_value": 0.224609375,
+          "threshold": 0.15,
+          "true_positive": false
+        },
+        {
+          "circuit": "grover_wrong_oracle",
+          "passed": false,
+          "is_buggy": true,
+          "metric_value": 0.001953125,
+          "threshold": 0.15,
+          "true_positive": false
+        },
+        {
+          "circuit": "grover_wrong_oracle",
+          "passed": false,
+          "is_buggy": true,
+          "metric_value": 0.001953125,
+          "threshold": 0.15,
+          "true_positive": false
+        },
+        {
+          "circuit": "grover_wrong_angle",
+          "passed": true,
+          "is_buggy": true,
+          "metric_value": 0.8046875,
+          "threshold": 0.15,
+          "true_positive": false
+        },
+        {
+          "circuit": "grover_wrong_angle",
+          "passed": true,
+          "is_buggy": true,
+          "metric_value": 0.8046875,
+          "threshold": 0.15,
+          "true_positive": false
+        },
+        {
+          "circuit": "bv_correct",
+          "passed": true,
+          "is_buggy": false,
+          "metric_value": 0.953125,
+          "threshold": 0.15,
+          "true_positive": true
+        },
+        {
+          "circuit": "bv_correct",
+          "passed": true,
+          "is_buggy": false,
+          "metric_value": 0.953125,
+          "threshold": 0.15,
+          "true_positive": true
+        },
+        {
+          "circuit": "bv_wrong_secret",
+          "passed": false,
+          "is_buggy": true,
+          "metric_value": 0.0,
+          "threshold": 0.15,
+          "true_positive": false
+        },
+        {
+          "circuit": "bv_wrong_secret",
+          "passed": false,
+          "is_buggy": true,
+          "metric_value": 0.0,
+          "threshold": 0.15,
+          "true_positive": false
+        },
+        {
+          "circuit": "bv_missing_hadamard",
+          "passed": false,
+          "is_buggy": true,
+          "metric_value": 0.052734375,
+          "threshold": 0.15,
+          "true_positive": false
+        },
+        {
+          "circuit": "bv_missing_hadamard",
+          "passed": false,
+          "is_buggy": true,
+          "metric_value": 0.052734375,
+          "threshold": 0.15,
+          "true_positive": false
+        },
+        {
+          "circuit": "bv_wrong_cnot",
+          "passed": false,
+          "is_buggy": true,
+          "metric_value": 0.009765625,
+          "threshold": 0.15,
+          "true_positive": false
+        },
+        {
+          "circuit": "bv_wrong_cnot",
+          "passed": false,
+          "is_buggy": true,
+          "metric_value": 0.009765625,
+          "threshold": 0.15,
+          "true_positive": false
+        },
+        {
+          "circuit": "qft_correct",
+          "passed": false,
+          "is_buggy": false,
+          "metric_value": 0.07421875,
+          "threshold": 0.15,
+          "true_positive": false
+        },
+        {
+          "circuit": "qft_correct",
+          "passed": false,
+          "is_buggy": false,
+          "metric_value": 0.0859375,
+          "threshold": 0.15,
+          "true_positive": false
+        },
+        {
+          "circuit": "qft_missing_swap",
+          "passed": false,
+          "is_buggy": true,
+          "metric_value": 0.072265625,
+          "threshold": 0.15,
+          "true_positive": false
+        },
+        {
+          "circuit": "qft_missing_swap",
+          "passed": false,
+          "is_buggy": true,
+          "metric_value": 0.072265625,
+          "threshold": 0.15,
+          "true_positive": false
+        },
+        {
+          "circuit": "qft_wrong_phase",
+          "passed": false,
+          "is_buggy": true,
+          "metric_value": 0.064453125,
+          "threshold": 0.15,
+          "true_positive": false
+        },
+        {
+          "circuit": "qft_wrong_phase",
+          "passed": false,
+          "is_buggy": true,
+          "metric_value": 0.0625,
+          "threshold": 0.15,
+          "true_positive": false
+        },
+        {
+          "circuit": "qft_missing_h",
+          "passed": false,
+          "is_buggy": true,
+          "metric_value": 0.10546875,
+          "threshold": 0.15,
+          "true_positive": false
+        },
+        {
+          "circuit": "qft_missing_h",
+          "passed": false,
+          "is_buggy": true,
+          "metric_value": 0.126953125,
+          "threshold": 0.15,
+          "true_positive": false
+        },
+        {
+          "circuit": "ghz_correct",
+          "passed": true,
+          "is_buggy": false,
+          "metric_value": 0.873046875,
+          "threshold": 0.15,
+          "true_positive": true
+        },
+        {
+          "circuit": "ghz_correct",
+          "passed": true,
+          "is_buggy": false,
+          "metric_value": 0.865234375,
+          "threshold": 0.15,
+          "true_positive": true
+        },
+        {
+          "circuit": "ghz_missing_cnot",
+          "passed": true,
+          "is_buggy": true,
+          "metric_value": 0.48046875,
+          "threshold": 0.15,
+          "true_positive": false
+        },
+        {
+          "circuit": "ghz_missing_cnot",
+          "passed": true,
+          "is_buggy": true,
+          "metric_value": 0.48046875,
+          "threshold": 0.15,
+          "true_positive": false
+        },
+        {
+          "circuit": "ghz_wrong_entanglement",
+          "passed": true,
+          "is_buggy": true,
+          "metric_value": 0.91796875,
+          "threshold": 0.15,
+          "true_positive": false
+        },
+        {
+          "circuit": "ghz_wrong_entanglement",
+          "passed": true,
+          "is_buggy": true,
+          "metric_value": 0.91796875,
+          "threshold": 0.15,
+          "true_positive": false
+        },
+        {
+          "circuit": "ghz_decoherence",
+          "passed": true,
+          "is_buggy": true,
+          "metric_value": 0.859375,
+          "threshold": 0.15,
+          "true_positive": false
+        },
+        {
+          "circuit": "ghz_decoherence",
+          "passed": true,
+          "is_buggy": true,
+          "metric_value": 0.873046875,
+          "threshold": 0.15,
+          "true_positive": false
+        },
+        {
+          "circuit": "qaoa_correct",
+          "passed": true,
+          "is_buggy": false,
+          "metric_value": 0.4765625,
+          "threshold": 0.15,
+          "true_positive": true
+        },
+        {
+          "circuit": "qaoa_correct",
+          "passed": true,
+          "is_buggy": false,
+          "metric_value": 0.4765625,
+          "threshold": 0.15,
+          "true_positive": true
+        },
+        {
+          "circuit": "qaoa_wrong_gamma",
+          "passed": false,
+          "is_buggy": true,
+          "metric_value": 0.068359375,
+          "threshold": 0.15,
+          "true_positive": false
+        },
+        {
+          "circuit": "qaoa_wrong_gamma",
+          "passed": false,
+          "is_buggy": true,
+          "metric_value": 0.060546875,
+          "threshold": 0.15,
+          "true_positive": false
+        },
+        {
+          "circuit": "qaoa_insufficient_depth",
+          "passed": true,
+          "is_buggy": true,
+          "metric_value": 0.306640625,
+          "threshold": 0.15,
+          "true_positive": false
+        },
+        {
+          "circuit": "qaoa_insufficient_depth",
+          "passed": true,
+          "is_buggy": true,
+          "metric_value": 0.306640625,
+          "threshold": 0.15,
+          "true_positive": false
+        },
+        {
+          "circuit": "qaoa_wrong_problem",
+          "passed": true,
+          "is_buggy": true,
+          "metric_value": 0.353515625,
+          "threshold": 0.15,
+          "true_positive": false
+        },
+        {
+          "circuit": "qaoa_wrong_problem",
+          "passed": true,
+          "is_buggy": true,
+          "metric_value": 0.353515625,
+          "threshold": 0.15,
+          "true_positive": false
+        },
+        {
+          "circuit": "dj_correct",
+          "passed": true,
+          "is_buggy": false,
+          "metric_value": 0.974609375,
+          "threshold": 0.15,
+          "true_positive": true
+        },
+        {
+          "circuit": "dj_correct",
+          "passed": true,
+          "is_buggy": false,
+          "metric_value": 0.974609375,
+          "threshold": 0.15,
+          "true_positive": true
+        },
+        {
+          "circuit": "dj_constant_function",
+          "passed": false,
+          "is_buggy": true,
+          "metric_value": 0.0,
+          "threshold": 0.15,
+          "true_positive": false
+        },
+        {
+          "circuit": "dj_constant_function",
+          "passed": false,
+          "is_buggy": true,
+          "metric_value": 0.0,
+          "threshold": 0.15,
+          "true_positive": false
+        },
+        {
+          "circuit": "dj_wrong_measurement",
+          "passed": true,
+          "is_buggy": true,
+          "metric_value": 0.263671875,
+          "threshold": 0.15,
+          "true_positive": false
+        },
+        {
+          "circuit": "dj_wrong_measurement",
+          "passed": true,
+          "is_buggy": true,
+          "metric_value": 0.263671875,
+          "threshold": 0.15,
+          "true_positive": false
+        },
+        {
+          "circuit": "dj_incomplete_oracle",
+          "passed": false,
+          "is_buggy": true,
+          "metric_value": 0.00390625,
+          "threshold": 0.15,
+          "true_positive": false
+        },
+        {
+          "circuit": "dj_incomplete_oracle",
+          "passed": false,
+          "is_buggy": true,
+          "metric_value": 0.00390625,
+          "threshold": 0.15,
+          "true_positive": false
+        }
+      ],
+      "43": [
+        {
+          "circuit": "grover_correct",
+          "passed": true,
+          "is_buggy": false,
+          "metric_value": 0.953125,
+          "threshold": 0.15,
+          "true_positive": true
+        },
+        {
+          "circuit": "grover_correct",
+          "passed": true,
+          "is_buggy": false,
+          "metric_value": 0.953125,
+          "threshold": 0.15,
+          "true_positive": true
+        },
+        {
+          "circuit": "grover_missing_diffusion",
+          "passed": true,
+          "is_buggy": true,
+          "metric_value": 0.25,
+          "threshold": 0.15,
+          "true_positive": false
+        },
+        {
+          "circuit": "grover_missing_diffusion",
+          "passed": true,
+          "is_buggy": true,
+          "metric_value": 0.25,
+          "threshold": 0.15,
+          "true_positive": false
+        },
+        {
+          "circuit": "grover_wrong_oracle",
+          "passed": false,
+          "is_buggy": true,
+          "metric_value": 0.00390625,
+          "threshold": 0.15,
+          "true_positive": false
+        },
+        {
+          "circuit": "grover_wrong_oracle",
+          "passed": false,
+          "is_buggy": true,
+          "metric_value": 0.00390625,
+          "threshold": 0.15,
+          "true_positive": false
+        },
+        {
+          "circuit": "grover_wrong_angle",
+          "passed": true,
+          "is_buggy": true,
+          "metric_value": 0.806640625,
+          "threshold": 0.15,
+          "true_positive": false
+        },
+        {
+          "circuit": "grover_wrong_angle",
+          "passed": true,
+          "is_buggy": true,
+          "metric_value": 0.806640625,
+          "threshold": 0.15,
+          "true_positive": false
+        },
+        {
+          "circuit": "bv_correct",
+          "passed": true,
+          "is_buggy": false,
+          "metric_value": 0.94140625,
+          "threshold": 0.15,
+          "true_positive": true
+        },
+        {
+          "circuit": "bv_correct",
+          "passed": true,
+          "is_buggy": false,
+          "metric_value": 0.94140625,
+          "threshold": 0.15,
+          "true_positive": true
+        },
+        {
+          "circuit": "bv_wrong_secret",
+          "passed": false,
+          "is_buggy": true,
+          "metric_value": 0.0,
+          "threshold": 0.15,
+          "true_positive": false
+        },
+        {
+          "circuit": "bv_wrong_secret",
+          "passed": false,
+          "is_buggy": true,
+          "metric_value": 0.0,
+          "threshold": 0.15,
+          "true_positive": false
+        },
+        {
+          "circuit": "bv_missing_hadamard",
+          "passed": false,
+          "is_buggy": true,
+          "metric_value": 0.0546875,
+          "threshold": 0.15,
+          "true_positive": false
+        },
+        {
+          "circuit": "bv_missing_hadamard",
+          "passed": false,
+          "is_buggy": true,
+          "metric_value": 0.0546875,
+          "threshold": 0.15,
+          "true_positive": false
+        },
+        {
+          "circuit": "bv_wrong_cnot",
+          "passed": false,
+          "is_buggy": true,
+          "metric_value": 0.00390625,
+          "threshold": 0.15,
+          "true_positive": false
+        },
+        {
+          "circuit": "bv_wrong_cnot",
+          "passed": false,
+          "is_buggy": true,
+          "metric_value": 0.00390625,
+          "threshold": 0.15,
+          "true_positive": false
+        },
+        {
+          "circuit": "qft_correct",
+          "passed": false,
+          "is_buggy": false,
+          "metric_value": 0.068359375,
+          "threshold": 0.15,
+          "true_positive": false
+        },
+        {
+          "circuit": "qft_correct",
+          "passed": false,
+          "is_buggy": false,
+          "metric_value": 0.08984375,
+          "threshold": 0.15,
+          "true_positive": false
+        },
+        {
+          "circuit": "qft_missing_swap",
+          "passed": false,
+          "is_buggy": true,
+          "metric_value": 0.064453125,
+          "threshold": 0.15,
+          "true_positive": false
+        },
+        {
+          "circuit": "qft_missing_swap",
+          "passed": false,
+          "is_buggy": true,
+          "metric_value": 0.052734375,
+          "threshold": 0.15,
+          "true_positive": false
+        },
+        {
+          "circuit": "qft_wrong_phase",
+          "passed": false,
+          "is_buggy": true,
+          "metric_value": 0.06640625,
+          "threshold": 0.15,
+          "true_positive": false
+        },
+        {
+          "circuit": "qft_wrong_phase",
+          "passed": false,
+          "is_buggy": true,
+          "metric_value": 0.056640625,
+          "threshold": 0.15,
+          "true_positive": false
+        },
+        {
+          "circuit": "qft_missing_h",
+          "passed": false,
+          "is_buggy": true,
+          "metric_value": 0.14453125,
+          "threshold": 0.15,
+          "true_positive": false
+        },
+        {
+          "circuit": "qft_missing_h",
+          "passed": false,
+          "is_buggy": true,
+          "metric_value": 0.140625,
+          "threshold": 0.15,
+          "true_positive": false
+        },
+        {
+          "circuit": "ghz_correct",
+          "passed": true,
+          "is_buggy": false,
+          "metric_value": 0.865234375,
+          "threshold": 0.15,
+          "true_positive": true
+        },
+        {
+          "circuit": "ghz_correct",
+          "passed": true,
+          "is_buggy": false,
+          "metric_value": 0.828125,
+          "threshold": 0.15,
+          "true_positive": true
+        },
+        {
+          "circuit": "ghz_missing_cnot",
+          "passed": true,
+          "is_buggy": true,
+          "metric_value": 0.490234375,
+          "threshold": 0.15,
+          "true_positive": false
+        },
+        {
+          "circuit": "ghz_missing_cnot",
+          "passed": true,
+          "is_buggy": true,
+          "metric_value": 0.490234375,
+          "threshold": 0.15,
+          "true_positive": false
+        },
+        {
+          "circuit": "ghz_wrong_entanglement",
+          "passed": true,
+          "is_buggy": true,
+          "metric_value": 0.88671875,
+          "threshold": 0.15,
+          "true_positive": false
+        },
+        {
+          "circuit": "ghz_wrong_entanglement",
+          "passed": true,
+          "is_buggy": true,
+          "metric_value": 0.88671875,
+          "threshold": 0.15,
+          "true_positive": false
+        },
+        {
+          "circuit": "ghz_decoherence",
+          "passed": true,
+          "is_buggy": true,
+          "metric_value": 0.828125,
+          "threshold": 0.15,
+          "true_positive": false
+        },
+        {
+          "circuit": "ghz_decoherence",
+          "passed": true,
+          "is_buggy": true,
+          "metric_value": 0.814453125,
+          "threshold": 0.15,
+          "true_positive": false
+        },
+        {
+          "circuit": "qaoa_correct",
+          "passed": true,
+          "is_buggy": false,
+          "metric_value": 0.4921875,
+          "threshold": 0.15,
+          "true_positive": true
+        },
+        {
+          "circuit": "qaoa_correct",
+          "passed": true,
+          "is_buggy": false,
+          "metric_value": 0.4921875,
+          "threshold": 0.15,
+          "true_positive": true
+        },
+        {
+          "circuit": "qaoa_wrong_gamma",
+          "passed": false,
+          "is_buggy": true,
+          "metric_value": 0.087890625,
+          "threshold": 0.15,
+          "true_positive": false
+        },
+        {
+          "circuit": "qaoa_wrong_gamma",
+          "passed": false,
+          "is_buggy": true,
+          "metric_value": 0.087890625,
+          "threshold": 0.15,
+          "true_positive": false
+        },
+        {
+          "circuit": "qaoa_insufficient_depth",
+          "passed": true,
+          "is_buggy": true,
+          "metric_value": 0.291015625,
+          "threshold": 0.15,
+          "true_positive": false
+        },
+        {
+          "circuit": "qaoa_insufficient_depth",
+          "passed": true,
+          "is_buggy": true,
+          "metric_value": 0.2890625,
+          "threshold": 0.15,
+          "true_positive": false
+        },
+        {
+          "circuit": "qaoa_wrong_problem",
+          "passed": true,
+          "is_buggy": true,
+          "metric_value": 0.34375,
+          "threshold": 0.15,
+          "true_positive": false
+        },
+        {
+          "circuit": "qaoa_wrong_problem",
+          "passed": true,
+          "is_buggy": true,
+          "metric_value": 0.34375,
+          "threshold": 0.15,
+          "true_positive": false
+        },
+        {
+          "circuit": "dj_correct",
+          "passed": true,
+          "is_buggy": false,
+          "metric_value": 0.955078125,
+          "threshold": 0.15,
+          "true_positive": true
+        },
+        {
+          "circuit": "dj_correct",
+          "passed": true,
+          "is_buggy": false,
+          "metric_value": 0.955078125,
+          "threshold": 0.15,
+          "true_positive": true
+        },
+        {
+          "circuit": "dj_constant_function",
+          "passed": false,
+          "is_buggy": true,
+          "metric_value": 0.001953125,
+          "threshold": 0.15,
+          "true_positive": false
+        },
+        {
+          "circuit": "dj_constant_function",
+          "passed": false,
+          "is_buggy": true,
+          "metric_value": 0.001953125,
+          "threshold": 0.15,
+          "true_positive": false
+        },
+        {
+          "circuit": "dj_wrong_measurement",
+          "passed": true,
+          "is_buggy": true,
+          "metric_value": 0.234375,
+          "threshold": 0.15,
+          "true_positive": false
+        },
+        {
+          "circuit": "dj_wrong_measurement",
+          "passed": true,
+          "is_buggy": true,
+          "metric_value": 0.234375,
+          "threshold": 0.15,
+          "true_positive": false
+        },
+        {
+          "circuit": "dj_incomplete_oracle",
+          "passed": false,
+          "is_buggy": true,
+          "metric_value": 0.01171875,
+          "threshold": 0.15,
+          "true_positive": false
+        },
+        {
+          "circuit": "dj_incomplete_oracle",
+          "passed": false,
+          "is_buggy": true,
+          "metric_value": 0.01171875,
+          "threshold": 0.15,
+          "true_positive": false
+        }
+      ]
+    }
+  }
+}
