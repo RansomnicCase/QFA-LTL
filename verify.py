@@ -38,22 +38,23 @@ def load_circuit(file_path):
 def main():
     parser = argparse.ArgumentParser(description="QFA-LTL Production Verifier")
     parser.add_argument("--circuit", required=True, help="Path to .qasm or .py file")
-    parser.add_argument("--spec", required=True, help="LTL Property (e.g. 'F(p > t)')")
+    parser.add_argument("--spec", required=True, help="LTL Property (e.g. 'F(prob(|11>) > 0.85)')")
     parser.add_argument("--metric", choices=['probability', 'parity', 'expectation'], 
                         default='probability', help="Success metric to use")
-    parser.add_argument("--target", required=True, help="Target state(s). For parity, use '00,11'")
+    parser.add_argument("--target", help="Target state(s). For parity, use '00,11'. Defaults to the LTL spec predicate basis.")
     parser.add_argument("--backend", default="fake_brisbane", help="Backend noise model")
     parser.add_argument("--noise", type=float, default=0.0, help="Adversarial noise injection probability (0.0 to 1.0)")
+    parser.add_argument("--seed", type=int, default=None, help="Random seed for reproducible runs")
     parser.add_argument("--output", help="Optional path to save JSON report")
 
     args = parser.parse_args()
     
     # Handle multi-target inputs for parity (e.g., GHZ)
-    target = args.target.split(',') if ',' in args.target else args.target
+    target = args.target.split(',') if args.target and ',' in args.target else args.target
 
     try:
         # 1. Initialize Engine
-        engine = UniversalVerifier(backend_name=args.backend)
+        engine = UniversalVerifier(backend_name=args.backend, seed=args.seed)
         
         # 2. Load Circuit (New Robust Loader)
         qc = load_circuit(args.circuit)
@@ -100,6 +101,7 @@ def main():
                 "backend": args.backend,
                 "spec": args.spec,
                 "adversarial_noise": args.noise,
+                "seed": args.seed,
                 "results": {
                     "verdict": report['verdict'],
                     "metric_value": report['metric_value'],

@@ -1,6 +1,11 @@
 """
 Sensitivity Analysis (The "ROC" Proof)
-Simulates varying the Safety Margin to prove the robustness of the 100% Recall.
+Simulates varying the Safety Margin to prove the robustness of the Adaptive Anchor.
+
+Metrics use standard detection conventions (buggy = positive class):
+  - Recall            = detected bugs / all bugs          (bug detection rate)
+  - Precision         = detected bugs / all FAIL verdicts (alarm accuracy)
+  - False-Failure Rate = correct circuits failed / all correct  (the framework's headline metric)
 """
 import json
 import numpy as np
@@ -35,39 +40,34 @@ def plot_sensitivity_sweep():
         tp, fp, fn, tn = 0, 0, 0, 0
         
         for entry in data:
-            if 'metric_value' not in entry: continue
+            if 'metric_value' not in entry or 'threshold' not in entry:
+                continue
             
-            algo = entry['circuit'].split('_')[0]
             val = entry['metric_value']
             # Apply the stress test modifier to the original threshold
             threshold = entry['threshold'] * mod
             
             is_buggy = entry['is_buggy']
             
-            # Re-evaluate Pass/Fail logic
-            if algo == 'qft':
-                # QFT: Pass if val < threshold (Lower is better)
-                # If we multiply threshold by 1.1, it gets LARGER (Looser)
-                # If we multiply by 0.9, it gets SMALLER (Stricter)
-                passed = val < threshold
-            else:
-                # Others: Pass if val > threshold (Higher is better)
-                passed = val > threshold
+            # Re-evaluate Pass/Fail logic: uniform higher-is-better semantics.
+            passed = val > threshold
             
-            # Count metrics
-            if passed and not is_buggy: tp += 1
-            if not passed and is_buggy: tn += 1
-            if passed and is_buggy:     fp += 1
-            if not passed and not is_buggy: fn += 1
+            # Count metrics (buggy = positive class)
+            if passed and is_buggy:     fn += 1  # bug missed (false negative)
+            if not passed and is_buggy: tp += 1  # bug caught (true positive)
+            if passed and not is_buggy: tn += 1  # correct passed (true negative)
+            if not passed and not is_buggy: fp += 1  # correct failed (false positive)
 
-        # Calculate Recall & Precision for this specific modifier
+        # Calculate metrics for this specific modifier
         recall = tp / (tp + fn) if (tp + fn) > 0 else 0
         precision = tp / (tp + fp) if (tp + fp) > 0 else 0
-        
+        false_failure = fp / (fp + tn) if (fp + tn) > 0 else 0
+
         stats.append({
             'Modifier': mod,
             'Recall': recall,
-            'Precision': precision
+            'Precision': precision,
+            'FalseFailureRate': false_failure
         })
 
     df = pd.DataFrame(stats)
@@ -77,10 +77,13 @@ def plot_sensitivity_sweep():
     sns.set_style("whitegrid")
     
     # Plot Recall (Blue Line)
-    sns.lineplot(data=df, x='Modifier', y='Recall', label='Recall (Safety)', color='blue', linewidth=3)
+    sns.lineplot(data=df, x='Modifier', y='Recall', label='Bug-Detection Recall', color='blue', linewidth=3)
     
     # Plot Precision (Red Line)
-    sns.lineplot(data=df, x='Modifier', y='Precision', label='Precision (Accuracy)', color='red', linewidth=2, linestyle='--')
+    sns.lineplot(data=df, x='Modifier', y='Precision', label='Precision (alarm accuracy)', color='red', linewidth=2, linestyle='--')
+    
+    # Plot False-Failure Rate (Orange)
+    sns.lineplot(data=df, x='Modifier', y='FalseFailureRate', label='False-Failure Rate (correct circuits failed)', color='orange', linewidth=2, linestyle=':')
     
     # Add the "Sweet Spot" marker at 1.0 (Our actual algorithm)
     plt.axvline(x=1.0, color='green', linestyle=':', label='Current Adaptive Anchor')
@@ -95,6 +98,11 @@ def plot_sensitivity_sweep():
     output_path.parent.mkdir(parents=True, exist_ok=True)
     plt.savefig(output_path)
     print(f"✅ Saved Robustness Graph to: {output_path}")
+
+    # 4. Report the operating point
+    op = df.iloc[(df['Modifier'] - 1.0).abs().idxmin()]
+    print(f"Operating point (modifier=1.0): recall={op['Recall']:.3f}, "
+          f"precision={op['Precision']:.3f}, false-failure={op['FalseFailureRate']:.3f}")
 
 if __name__ == "__main__":
     plot_sensitivity_sweep()

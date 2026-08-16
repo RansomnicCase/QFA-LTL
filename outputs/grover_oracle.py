@@ -44,6 +44,7 @@ def grover_2q_oracle(counts: Dict[str, int], total_shots: int = 1024) -> bool:
     
     # Compare against calculated threshold
     # Threshold derived from QFA-LTL product construction + IBM noise model
+    # Comparison operator comes from the LTL predicate: >
     result = observed_prob > TEST_THRESHOLD
     
     # Diagnostic output (optional)

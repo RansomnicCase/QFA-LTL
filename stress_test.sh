@@ -17,7 +17,7 @@ do
     
     # Run the verifier. 
     # Note: Ensure the PYTHONPATH is set correctly for your structure
-    OUT=$(python3 verify.py --circuit examples/ghz.qasm --spec "F(p > t)" --metric parity --target "000, 111" --noise $n)
+    OUT=$(python3 verify.py --circuit examples/ghz.qasm --spec "F(prob(|000>) + prob(|111>) > 0.5)" --metric parity --target "000, 111" --noise $n --seed 42)
     
     # Extract values using grep and awk
     VAL=$(echo "$OUT" | grep "Measured Val" | awk '{print $NF}')

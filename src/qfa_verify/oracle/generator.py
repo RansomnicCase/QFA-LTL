@@ -8,7 +8,7 @@ class OracleGenerator:
     """Generates production-ready quantum test oracles"""
     
     def generate(self, circuit_name: str, ltl_spec: str, threshold_data: Dict,
-                 basis_state: str, metadata: Dict) -> str:
+                 basis_state: str, metadata: Dict, comparison: str = '>') -> str:
         """
         Generate complete Python oracle function.
         
@@ -18,6 +18,7 @@ class OracleGenerator:
             threshold_data: Output from NoiseAwareThresholdCalculator
             basis_state: Target basis state (e.g., "11")
             metadata: Build info (backend, timestamp, etc.)
+            comparison: Comparison operator from the LTL predicate ('>', '<', ...)
         
         Returns:
             Python code string containing the oracle function
@@ -73,7 +74,8 @@ def {circuit_name}_oracle(counts: Dict[str, int], total_shots: int = 1024) -> bo
     
     # Compare against calculated threshold
     # Threshold derived from QFA-LTL product construction + IBM noise model
-    result = observed_prob > TEST_THRESHOLD
+    # Comparison operator comes from the LTL predicate: {comparison}
+    result = observed_prob {comparison} TEST_THRESHOLD
     
     # Diagnostic output (optional)
     if not result:
@@ -105,7 +107,7 @@ def temporal_oracle(histograms: List[Dict[str, int]], window_size: int = 100) ->
         if total == 0:
             continue
         prob = hist.get("{basis_state}", 0) / total
-        if prob > TEST_THRESHOLD:
+        if prob {comparison} TEST_THRESHOLD:
             return True
     
     return False

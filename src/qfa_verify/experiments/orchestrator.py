@@ -10,15 +10,16 @@ from ..ibm.runner import IBMRunner, SimulatorRunner, IBMJobResult
 from ..experiments.benchmarks import BenchmarkSuite
 
 class SafetyOrchestrator:
-    def __init__(self, backend="fake_brisbane", use_ibm: bool = False, token: Optional[str] = None):
+    def __init__(self, backend="fake_brisbane", use_ibm: bool = False, token: Optional[str] = None, seed: Optional[int] = None):
         self.backend = backend
         self.use_ibm = use_ibm
+        self.seed = seed
         
         # Select Backend Runner based on mode
         if use_ibm and token:
             self.runner = IBMRunner(token=token)
         else:
-            self.runner = SimulatorRunner()
+            self.runner = SimulatorRunner(seed=seed)
             
         # Setup Output Directory
         self.results_dir = Path("outputs/experiments")
@@ -107,7 +108,6 @@ class SafetyOrchestrator:
     def _calculate_metric(self, base: str, counts: Dict, total: int) -> float:
         counts = self._clean_counts(counts)
         target = self.learned_targets.get(base)
-        if base == 'qft': return max(counts.values()) / total if counts else 0
         if isinstance(target, list):
             return sum(counts.get(t, 0) for t in target) / total
         return counts.get(target, 0) / total if target else max(counts.values())/total
@@ -136,10 +136,13 @@ class SafetyOrchestrator:
             is_buggy = 'correct' not in res.circuit_name
             val = self._calculate_metric(base, res.counts, sum(res.counts.values()))
             threshold = thresholds.get(base, 0.15)
-            passed = bool(val > threshold) if base != 'qft' else bool(val < threshold)
+            # Uniform verdict semantics: pass iff the measured success metric
+            # clears the adaptive anchor. No per-algorithm inversion hacks.
+            passed = bool(val > threshold)
             evaluated.append({
                 'circuit': res.circuit_name, 'passed': passed, 'is_buggy': bool(is_buggy),
-                'metric_value': float(val), 'true_positive': bool(passed and not is_buggy)
+                'metric_value': float(val), 'threshold': float(threshold),
+                'true_positive': bool(passed and not is_buggy)
             })
         return evaluated
 
@@ -147,5 +150,29 @@ class SafetyOrchestrator:
         with open(filename, 'w') as f: json.dump(results, f, indent=2)
 
     def _generate_report(self, all_results: List[Dict]):
-        tp = sum(1 for r in all_results if r.get('true_positive', False))
-        print(f"\n📊 FINAL REPORT: Total Tests: {len(all_results)} | Success: {tp}")
+        from collections import Counter
+        by_algo = defaultdict(lambda: {'correct_pass': 0, 'correct_fail': 0, 'buggy_pass': 0, 'buggy_fail': 0})
+        for r in all_results:
+            base = r['circuit'].split('_')[0]
+            b = by_algo[base]
+            if r['is_buggy']:
+                if r['passed']: b['buggy_pass'] += 1
+                else: b['buggy_fail'] += 1
+            else:
+                if r['passed']: b['correct_pass'] += 1
+                else: b['correct_fail'] += 1
+
+        tp = sum(1 for r in all_results if not r['passed'] and r['is_buggy'])
+        fp = sum(1 for r in all_results if not r['passed'] and not r['is_buggy'])
+        fn = sum(1 for r in all_results if r['passed'] and r['is_buggy'])
+        tn = sum(1 for r in all_results if r['passed'] and not r['is_buggy'])
+
+        print(f"\n📊 FINAL REPORT: Total Tests: {len(all_results)}")
+        print(f"   Correct circuits: {tn} passed, {fp} failed  (false-failure rate {fp/(fp+tn):.1%})")
+        print(f"   Buggy circuits:   {tp} caught, {fn} missed  (detection recall {tp/(tp+fn):.1%})")
+        print(f"   Alarm precision (FAIL verdicts that are truly buggy): {tp/(tp+fp):.1%}")
+        print(f"\n   Per-algorithm breakdown:")
+        for base in sorted(by_algo):
+            b = by_algo[base]
+            print(f"     {base:8s} correct {b['correct_pass']}/{b['correct_pass']+b['correct_fail']} pass | "
+                  f"buggy {b['buggy_fail']}/{b['buggy_pass']+b['buggy_fail']} caught")

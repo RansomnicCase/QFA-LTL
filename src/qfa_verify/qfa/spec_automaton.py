@@ -9,6 +9,8 @@ class BuchiAutomaton:
     transitions: Dict[Tuple[str, str], str] = field(default_factory=dict)
     initial_state: str = "q0"
     accepting_states: Set[str] = field(default_factory=set)
+    violating_states: Set[str] = field(default_factory=set)
+    operator: str = "F"
     
     def add_transition(self, from_state: str, guard: str, to_state: str):
         self.transitions[(from_state, guard)] = to_state
@@ -53,7 +55,8 @@ class SpecQFABuilder:
             states={'q0', 'q1'},
             alphabet={'sat', 'unsat'},
             initial_state='q0',
-            accepting_states={'q1'}
+            accepting_states={'q1'},
+            operator='F'
         )
         ba.add_transition('q0', 'sat', 'q1')
         ba.add_transition('q0', 'unsat', 'q0')
@@ -68,7 +71,9 @@ class SpecQFABuilder:
             states={'q0', 'q1'},
             alphabet={'sat', 'unsat'},
             initial_state='q0',
-            accepting_states={'q0'}
+            accepting_states={'q0'},
+            violating_states={'q1'},
+            operator='G'
         )
         ba.add_transition('q0', 'sat', 'q0')
         ba.add_transition('q0', 'unsat', 'q1')
@@ -84,7 +89,9 @@ class SpecQFABuilder:
             states=states,
             alphabet={'sat', 'unsat'},
             initial_state='q0',
-            accepting_states={'q_sat'}
+            accepting_states={'q_sat'},
+            violating_states={'q_fail'},
+            operator=f'F<={k}'
         )
         
         for i in range(k):
@@ -109,7 +116,9 @@ class SpecQFABuilder:
             states=states,
             alphabet={'sat', 'unsat'},
             initial_state='q0',
-            accepting_states={'q_ok'} | {f'q{i}' for i in range(k+1)}
+            accepting_states={'q_ok'} | {f'q{i}' for i in range(k+1)},
+            violating_states={'q_violated'},
+            operator=f'G<={k}'
         )
         
         for i in range(k):

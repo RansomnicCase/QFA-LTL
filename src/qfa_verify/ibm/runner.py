@@ -40,7 +40,8 @@ class IBMRunner:
         return []
 
 class SimulatorRunner(IBMRunner):
-    def __init__(self):
+    def __init__(self, seed: Optional[int] = None):
+        self.seed = seed
         try:
             from qiskit_ibm_runtime.fake_provider import FakeBrisbane, FakeSherbrooke
         except:
@@ -53,6 +54,8 @@ class SimulatorRunner(IBMRunner):
         from qiskit_aer import AerSimulator
         target_backend = self.backends.get(backend_name, self.backends['fake_brisbane'])
         sim = AerSimulator.from_backend(target_backend)
+        if self.seed is not None:
+            sim.set_options(seed_simulator=self.seed)
         
         results = []
         for name, qc in circuits.items():

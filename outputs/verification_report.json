@@ -1,13 +1,14 @@
 {
-    "timestamp": "2026-02-20T10:48:21.549711",
-    "input_file": "examples/ising_6q.qasm",
+    "timestamp": "2026-08-16T17:38:33.248148",
+    "input_file": "examples/ghz.qasm",
     "backend": "fake_brisbane",
-    "spec": "G(p > t)",
-    "adversarial_noise": 0.04,
+    "spec": "F(prob(|000>) + prob(|111>) > 0.5)",
+    "adversarial_noise": 1.0,
+    "seed": 42,
     "results": {
         "verdict": "fail",
-        "metric_value": 0.455078125,
-        "threshold": 0.6851322534377042,
-        "calibration_loss": 0.02001953125
+        "metric_value": 0.2666015625,
+        "threshold": 0.560000562891109,
+        "calibration_loss": 0.037353515625
     }
 }

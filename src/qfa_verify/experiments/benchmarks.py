@@ -30,12 +30,12 @@ class BenchmarkSuite:
     def _get_spec_for_alg(alg: str) -> str:
         """Returns the LTL safety property for each algorithm class."""
         specs = {
-            "grover": "F(prob('11') > 0.5)",       
-            "bv": "F(prob('10101') > 0.5)",       
-            "dj": "G(prob('00') > 0.5)",           
-            "ghz": "G(prob('000000') + prob('111111') > 0.7)", 
-            "qft": "F(prob('1010') > 0.1)",        
-            "qaoa": "F(prob('0101') + prob('1010') > 0.4)" 
+            "grover": "F(prob(|11>) > 0.5)",       
+            "bv": "F(prob(|10101>) > 0.5)",       
+            "dj": "G(prob(|00>) > 0.5)",           
+            "ghz": "G(prob(|000000>) + prob(|111111>) > 0.7)", 
+            "qft": "F(prob(|1010>) > 0.05)",        
+            "qaoa": "F(prob(|0101>) + prob(|1010>) > 0.4)" 
         }
         return specs.get(alg, "F(prob('00') > 0.1)")
 

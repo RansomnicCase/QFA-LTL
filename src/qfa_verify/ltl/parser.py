@@ -9,7 +9,11 @@ grammar = """
     
     bound: "<=" NUMBER -> bound
     
-    ?prob_comp: "prob" "(" basis ")" COMPARISON NUMBER -> prob_pred
+    ?prob_comp: sum_prob COMPARISON NUMBER -> prob_pred
+    
+    ?sum_prob: prob_term ("+" prob_term)*
+    
+    prob_term: "prob" "(" basis ")" -> prob_basis
     
     basis: "|" BINARY ">" -> basis_state
     
@@ -47,13 +51,21 @@ class LTLTransformer(Transformer):
     def bound(self, num):
         return int(float(num))  # Convert to int for bound
     
-    def prob_pred(self, basis, comp, num):
+    def prob_pred(self, *args):
+        # args = [basis..., comparison, number]
+        comp = args[-2]
+        num = args[-1]
+        bases = list(args[:-2])
         return {
             'type': 'probability',
-            'basis': str(basis),
+            'bases': bases,
+            'basis': bases[0] if len(bases) == 1 else None,  # back-compat single-basis accessor
             'comparison': str(comp),
             'threshold': float(num)
         }
+    
+    def prob_basis(self, basis):
+        return str(basis)
     
     def basis_state(self, bits):
         return str(bits)

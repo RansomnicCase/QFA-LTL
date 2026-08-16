@@ -54,6 +54,9 @@ class CircuitQFA:
         self.transitions: List[QFATransition] = []
         self.step_history: List[Dict[BasisState, complex]] = [self.superposition.copy()]
         
+        # Accumulated probability mass dropped by truncation (L1/L2 error bound)
+        self.truncation_error: float = 0.0
+        
     def apply_gate(self, gate_name: str, qubits: List[int], params: Optional[List[float]] = None):
         """
         Apply quantum gate and track automaton transitions.
@@ -92,12 +95,13 @@ class CircuitQFA:
         self.step_history.append(self.superposition.copy())
     
     def _apply_h(self, target: int, new_sup: Dict[BasisState, complex]):
-        """Hadamard: creates superposition"""
+        """Hadamard: creates superposition.
+        H|0> = (|0> + |1>)/√2 ; H|1> = (|0> - |1>)/√2
+        """
         sqrt2_inv = 1/np.sqrt(2)
         for state, amp in self.superposition.items():
-            # |0> -> |0> + |1>, |1> -> |0> - |1>
-            s0 = state
-            s1 = state.flip(target)
+            s0 = state       # bit = 0 version
+            s1 = state.flip(target)  # bit = 1 version
             
             if state.bits[target] == '0':
                 new_sup[s0] += amp * sqrt2_inv
@@ -105,10 +109,10 @@ class CircuitQFA:
                 self._record_transition(state, s0, amp * sqrt2_inv, 'h')
                 self._record_transition(state, s1, amp * sqrt2_inv, 'h')
             else:
-                new_sup[s0] += amp * sqrt2_inv
-                new_sup[s1] -= amp * sqrt2_inv
-                self._record_transition(state, s0, amp * sqrt2_inv, 'h')
-                self._record_transition(state, s1, -amp * sqrt2_inv, 'h')
+                new_sup[s0] -= amp * sqrt2_inv
+                new_sup[s1] += amp * sqrt2_inv
+                self._record_transition(state, s0, -amp * sqrt2_inv, 'h')
+                self._record_transition(state, s1, amp * sqrt2_inv, 'h')
     
     def _apply_x(self, target: int, new_sup: Dict[BasisState, complex]):
         """Pauli-X: bit flip"""
@@ -140,7 +144,7 @@ class CircuitQFA:
                 self._record_transition(state, state, amp, f'rz({theta:.3f})')
     
     def _apply_ry(self, target: int, theta: float, new_sup: Dict[BasisState, complex]):
-        """RY rotation: amplitude mixing"""
+        """RY rotation: amplitude mixing. RY(θ) = [[cos, -sin], [sin, cos]]"""
         cos_t = np.cos(theta/2)
         sin_t = np.sin(theta/2)
         
@@ -154,10 +158,10 @@ class CircuitQFA:
                 self._record_transition(state, s0, amp * cos_t, f'ry({theta:.3f})')
                 self._record_transition(state, s1, amp * sin_t, f'ry({theta:.3f})')
             else:
-                new_sup[s0] -= amp * sin_t  # Note the sign
-                new_sup[s1] += amp * cos_t
-                self._record_transition(state, s0, -amp * sin_t, f'ry({theta:.3f})')
-                self._record_transition(state, s1, amp * cos_t, f'ry({theta:.3f})')
+                new_sup[s0] += amp * cos_t
+                new_sup[s1] -= amp * sin_t
+                self._record_transition(state, s0, amp * cos_t, f'ry({theta:.3f})')
+                self._record_transition(state, s1, -amp * sin_t, f'ry({theta:.3f})')
     
     def _apply_cz(self, control: int, target: int, new_sup: Dict[BasisState, complex]):
         """Controlled-Z: phase flip if both 1"""
@@ -214,20 +218,16 @@ class CircuitQFA:
             self._record_transition(state, new_state, amp, 'swap')
 
     def _apply_rx(self, target: int, theta: float, new_sup: Dict[BasisState, complex]):
-        """RX rotation: X-axis rotation"""
+        """RX rotation: X-axis rotation, RX(θ) = [[cos, -i sin], [-i sin, cos]]"""
         cos_t = np.cos(theta/2)
-        sin_t = np.sin(theta/2) * 1j  # i*sin for RX
+        sin_t = -1j * np.sin(theta/2)  # -i*sin for RX
     
         for state, amp in self.superposition.items():
             s0 = BasisState(state.bits)
             s1 = state.flip(target)
         
-            if state.bits[target] == '0':
-                new_sup[s0] += amp * cos_t
-                new_sup[s1] += amp * sin_t * (-1j)  # RX specific
-            else:
-                new_sup[s0] += amp * sin_t * (-1j)
-                new_sup[s1] += amp * cos_t
+            new_sup[s0] += amp * cos_t
+            new_sup[s1] += amp * sin_t
         
             self._record_transition(state, s0, amp * cos_t, f'rx({theta:.3f})')
             self._record_transition(state, s1, amp * sin_t, f'rx({theta:.3f})')
@@ -237,22 +237,24 @@ class CircuitQFA:
         self.transitions.append(QFATransition(from_s, to_s, amp, gate))
     
     def _prune(self, superposition: Dict[BasisState, complex], threshold: float = 1e-10):
-        """Remove negligible states to prevent exponential blowup"""
-        # Remove low probability states
-        to_remove = [s for s, a in superposition.items() if abs(a)**2 < threshold]
+        """Remove negligible states to prevent exponential blowup.
+
+        States below `threshold` probability are dropped; if the support still
+        exceeds max_size, the lowest-probability states are truncated and the
+        dropped probability mass is accumulated in self.truncation_error.
+        """
+        to_remove = [s for s, a in superposition.items() if abs(a) ** 2 < threshold]
         for s in to_remove:
             del superposition[s]
-        
-        # If still too large, keep only top-k by probability
+
+        # If still too large, keep only top-k by probability.
         if len(superposition) > self.max_size:
-            items = [(abs(a)**2, s) for s, a in superposition.items()]
-            top_k = heapq.nlargest(self.max_size, items)
+            items = sorted(superposition.items(), key=lambda kv: -abs(kv[1]) ** 2)
+            kept = dict(items[:self.max_size])
+            dropped = dict(items[self.max_size:])
+            self.truncation_error += sum(abs(a) ** 2 for a in dropped.values())
             superposition.clear()
-            for prob, state in top_k:
-                # We need to restore the amplitude, but we only stored probability
-                # For now, just keep the state with original amplitude from old dict
-                # This is a simplification - in production, use proper heap with values
-                pass  # Placeholder - pruning logic needs full implementation
+            superposition.update(kept)
     
     def get_probability(self, basis_str: str) -> float:
         """Get probability of specific basis state"""

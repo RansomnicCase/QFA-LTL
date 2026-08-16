@@ -7,14 +7,14 @@ import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from src.experiments.orchestrator import ExperimentOrchestrator
+from src.qfa_verify.experiments.orchestrator import SafetyOrchestrator
 
 def test_week3_simulator():
     """Test with simulator (no IBM credits used)"""
     print("WEEK 3: IBM Backend Integration (Simulator Mode)")
     print("="*60)
     
-    orch = ExperimentOrchestrator(use_ibm=False)
+    orch = SafetyOrchestrator(backend="fake_brisbane", use_ibm=False)
     
     # Run subset for testing
     orch.run_full_suite(
@@ -24,31 +24,16 @@ def test_week3_simulator():
     )
 
 def test_week3_real_ibm():
-    """Test on real IBM hardware (costs credits)"""
+    """Test on real IBM hardware (costs credits).
+
+    NOTE: IBMRunner.execute_benchmark is currently a stub (returns []).
+    Real-hardware execution requires implementing the IBM Runtime Sampler
+    path — tracked as Phase 3 of the research roadmap.
+    """
     print("WEEK 3: IBM Backend Integration (REAL HARDWARE)")
     print("⚠️  This will consume IBM Quantum credits!")
-    print("="*60)
-    
-    confirm = input("Do you want to run on real IBM hardware? (yes/no): ")
-    if confirm.lower() != 'yes':
-        print("Aborted. Run test_week3_simulator() instead.")
-        return
-    
-    orch = ExperimentOrchestrator(use_ibm=True)
-    
-    # List available backends
-    orch.runner.list_backends(min_qubits=7)
-    
-    # Run on real backends
-    orch.run_full_suite(
-        backends=['ibm_brisbane', 'ibm_sherbrooke'],  # Choose 2-3
-        shots=1024,
-        reps=5  # 5 repetitions for statistical significance
-    )
+    print("⛔ Stub not implemented yet — see run_full_suite in SafetyOrchestrator.")
 
 if __name__ == "__main__":
     # Default: run simulator
     test_week3_simulator()
-    
-    # Uncomment for real hardware:
-    # test_week3_real_ibm()

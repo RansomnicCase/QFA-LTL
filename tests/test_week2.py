@@ -9,12 +9,12 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from qiskit import QuantumCircuit
 import numpy as np
 
-from src.qfa.circuit_compiler import compile_circuit
-from src.qfa.spec_automaton import SpecQFABuilder
-from src.qfa.product_construction import ProductConstructor
-from src.ltl.parser import parse_ltl
-from src.noise.ibm_backend import NoiseAwareThresholdCalculator
-from src.oracle.generator import OracleGenerator
+from src.qfa_verify.qfa.circuit_compiler import compile_circuit
+from src.qfa_verify.qfa.spec_automaton import SpecQFABuilder
+from src.qfa_verify.qfa.product_construction import ProductAutomaton
+from src.qfa_verify.ltl.parser import parse_ltl
+from src.qfa_verify.noise.ibm_backend import NoiseAwareThresholdCalculator
+from src.qfa_verify.oracle.generator import OracleGenerator
 
 def create_grover_circuit() -> QuantumCircuit:
     """2-qubit Grover's algorithm searching for |11>"""
@@ -76,7 +76,7 @@ def test_product_construction(qfa, ideal_prob):
     print(f"Spec-QFA states: {spec_qfa.states}")
     
     # Build product
-    constructor = ProductConstructor(qfa, spec_qfa, '11', 0.85)
+    constructor = ProductAutomaton(qfa, spec_qfa, '11', 0.85)
     constructor.construct()
     
     print(f"Product states: {len(constructor.states)}")

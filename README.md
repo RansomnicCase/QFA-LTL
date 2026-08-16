@@ -1,12 +1,13 @@
-# QFA-LTL: Quantum Finite Automata and LTL Verification Framework
+# QFA-LTL: Noise-Adaptive Statistical Verification for NISQ Executions
 
-QFA-LTL is a hardware-aware verification framework designed to address the critical challenges of measurement collapse, state-space explosion, and stochastic noise in NISQ-era (Noisy Intermediate-Scale Quantum) computing. By integrating **Linear Temporal Logic (LTL)** with **Quantum Finite Automata (QFA)**, the system provides a robust test oracle that maintains high recall by adapting to real-time hardware conditions.
+QFA-LTL is a research framework for **testing noisy quantum circuit executions against temporal statistical specifications**. It synthesizes adaptive pass/fail oracles from a calibration probe (ZKC), a volume-based noise anchor, and Linear Temporal Logic (LTL) properties evaluated over measurement windows — then characterizes which circuit faults are detectable from measurement statistics alone.
+
+**Positioning note.** This is *not* on-chip verification (no ancilla automata, no mid-circuit measurement). All verification machinery runs classically: the automaton compiler is exact statevector tracking, and the LTL monitor consumes measurement histograms. The research contribution is the *noise-adaptive statistical oracle*: deciding whether a circuit's **measured behavior** satisfies a temporal specification under real device noise — the question classical equivalence checking (ideal unitary correctness) does not answer.
 
 ---
 
 ## Table of Contents
 
-* [Introduction](#introduction)
 * [Key Innovations](#key-innovations)
 * [System Architecture](#system-architecture)
 * [Project Structure](#project-structure)
@@ -17,76 +18,63 @@ QFA-LTL is a hardware-aware verification framework designed to address the criti
   * [Adversarial Stress Testing](#2-adversarial-stress-testing)
   * [Batch Benchmarking](#3-batch-benchmarking)
 * [Experimental Validation](#experimental-validation)
+* [Known Limitations](#known-limitations)
+* [Research Status](#research-status)
 * [Dependencies](#dependencies)
-* [Configuration](#configuration)
-* [Examples](#examples)
-* [Troubleshooting](#troubleshooting)
-* [Contributors](#contributors)
-* [License](#license)
 * [Citation](#citation)
-
----
-
-## Introduction
-
-QFA-LTL is designed to provide **hardware-aware temporal verification** for quantum circuits operating in noisy intermediate-scale quantum (NISQ) environments. Traditional verification methods often rely on static thresholds and idealized assumptions, leading to false failures or undetected drift in real hardware.
-
-This framework dynamically adapts verification thresholds based on real-time calibration and circuit complexity, ensuring more reliable validation of quantum programs.
 
 ---
 
 ## Key Innovations
 
-* **Adaptive Safety Anchor**
-  A dynamic thresholding mechanism that adjusts pass/fail criteria based on real-time noise profiles rather than static benchmarks.
-
 * **Zero-Knowledge Calibration (ZKC)**
-  A pre-execution protocol that uses Bell-state probes to measure actual hardware fidelity on specific physical qubits before the target circuit runs.
+  A pre-execution Bell-state probe on the *physical qubits* the circuit maps to. Measures actual device fidelity on the target layout before the circuit runs, and produces a per-run noise estimate ε.
 
-* **Volume-Based Scaling Model**
-  A noise-resilient model that scales verification thresholds according to:
+* **Volume-Based Adaptive Anchor**
+  A circuit-specific threshold derived from the probe:
+  ```
+  Anchor = (1 - ε)^V × 0.98,   V = (#2q gates) + 0.1 × (register width)
+  ```
+  The anchor is authoritative for the verdict: pass iff the measured success metric clears it (direction from the LTL predicate). No static thresholds, no per-algorithm hacks.
 
-  * Two-qubit gate density ($N_{2q}$)
-  * Register width
-    Following an exponential decay law.
+* **LTL as the Source of Truth**
+  The spec is parsed and enforced: `F(prob(|b1> + |b2>) > t)`, `G(prob(|00>) < t)`, and bounded variants. The predicate supplies the target basis states, the comparison direction, and the semantic threshold. Multi-basis (parity-style) predicates are supported.
+
+* **Windowed Temporal Monitoring**
+  LTL properties are evaluated over measurement traces as *windowed Bernoulli estimates*: each time step is a window of shots, and the predicate is the empirical fraction of shots in the target bases compared per the spec operator. This gives `F`, `G`, `F<=k`, `G<=k` well-defined semantics on real histograms.
+
+* **Exact Circuit→Automaton Compiler with Truncation Bound**
+  The `CircuitQFA` compiler performs exact statevector tracking with per-gate amplitude transitions, validated against Qiskit's statevector simulator (max |Δp| ≈ 9e-16 over randomized circuits). State truncation is bounded and tracked (`truncation_error`), giving a provable handle on the approximation.
 
 * **Adversarial Noise Injection**
-  A built-in stress-testing module that injects stochastic Pauli errors ($X$, $Z$) to validate robustness of safety anchors.
+  Controlled stochastic Pauli (X/Y/Z) error injection for robustness boundary analysis.
 
-* **Temporal Property Enforcement**
-  Support for verifying complex temporal properties including:
-
-  * Reachability ($F$)
-  * Invariance ($G$)
-  * Persistence ($FG$)
+* **Fault Detectability Characterization**
+  The benchmark suite is a taxonomy: for each algorithm class, we characterize which injected faults are detectable from measurement statistics and which are *measurement-invisible* (e.g., phase errors in QFT, distribution-preserving GHZ mutations). See [Known Limitations](#known-limitations).
 
 ---
 
 ## System Architecture
 
-The framework operates through a modular and reproducible pipeline:
+1. **Specification** — LTL properties define what "acceptable measured behavior" means.
+2. **Calibration** — ZKC probe runs on the mapped physical qubits; estimates noise ε.
+3. **Thresholding** — the volume-based anchor is computed from ε and circuit volume.
+4. **Execution** — Aer simulator with fake-backend noise models (IBM Runtime path in progress).
+5. **Verdict** — metric (probability / parity / expectation) vs anchor, direction from the spec; structured JSON report.
 
-1. **Specification**
-   LTL properties are defined as temporal constraints (e.g., `FG(p > t)`).
-
-2. **Calibration**
-   The ZKC module executes a probe circuit to detect gate drift and decoherence on the specific hardware layout.
-
-3. **Thresholding**
-   The engine calculates an **Adaptive Anchor** using the volume-based scaling model:
-
-   ```
-   Threshold = (1 - ε)^V × 0.98
-   ```
-
-4. **Execution**
-   The `SafetyOrchestrator` manages execution flow via:
-
-   * `SimulatorRunner` (Aer)
-   * `IBMRunner` (Qiskit Runtime)
-
-5. **Verdict**
-   An automated report compares measured success metrics against the dynamic anchor to issue a **PASS/FAIL** verdict.
+```
+verify.py
+├── UniversalVerifier (engine.py)
+│   ├── ZKC probe (calibration)
+│   ├── Adaptive anchor (volume scaling)
+│   ├── Adversarial noise injection (optional)
+│   └── LTL spec parsing (parser.py) → target/direction
+├── SimulatorRunner (ibm/runner.py) — Aer + FakeBrisbane/FakeSherbrooke noise models
+├── SafetyOrchestrator (experiments/orchestrator.py) — 24-circuit suite, thresholds, report
+├── BenchmarkSuite (experiments/benchmarks.py) — 6 algorithms × (correct + 3 faults)
+├── LTL machinery — parser → spec automaton → temporal monitor / product construction
+└── analysis/ — visualizer (confusion matrix, pass rates), sensitivity (ROC-style), Streamlit dashboard
+```
 
 ---
 
@@ -94,30 +82,27 @@ The framework operates through a modular and reproducible pipeline:
 
 ```
 qfa_ltl_project/
-│
-├── verify.py
-├── stress_test.sh
-├── outputs/
-├── examples/
-│   ├── ghz.qasm
-│   └── ...
-└── src/
-    └── qfa_verify/
-        ├── engine.py
-        ├── experiments/
-        │   └── orchestrator.py
-        └── ibm/
-            └── runner.py
+├── verify.py                 # CLI entry point (spec-driven verification)
+├── run_benchmarks.py         # 24-circuit benchmark suite runner (seeded)
+├── run_comparison_study.py   # Adaptive-vs-fixed threshold study
+├── stress_test.sh            # Noise boundary sweep (seeded)
+├── src/qfa_verify/
+│   ├── engine.py             # UniversalVerifier: ZKC, anchor, verdict
+│   ├── ltl/parser.py         # LTL grammar (Lark) incl. multi-basis predicates
+│   ├── qfa/
+│   │   ├── circuit_compiler.py    # Exact statevector-tracking automaton
+│   │   ├── spec_automaton.py      # F/G/F<=k/G<=k automata + violating states
+│   │   └── product_construction.py# Circuit × Spec product, reachability
+│   ├── monitoring/temporal_monitor.py  # Windowed Bernoulli LTL monitoring
+│   ├── oracle/generator.py   # Auto-generated deployable test oracles
+│   ├── noise/ibm_backend.py  # Noise profiles + Wilson-score threshold calc
+│   ├── ibm/runner.py         # Aer (fake backend) execution; IBM stub
+│   └── experiments/          # BenchmarkSuite + SafetyOrchestrator
+├── analysis/                 # visualizer.py, sensitivity.py, app.py (Streamlit)
+├── tests/                    # test_week1/2/3.py (all green)
+├── examples/                 # GHZ, BV-10, QPE, Ising, 7q variational, Grover oracle
+└── paper/                    # Submission drafts (abstract, contributions, outline)
 ```
-
-### File Descriptions
-
-* `verify.py` — Primary CLI entry point for running verification tasks.
-* `src/qfa_verify/engine.py` — Core `UniversalVerifier`, ZKC implementation, and metric strategies.
-* `src/qfa_verify/experiments/orchestrator.py` — `SafetyOrchestrator` for metrics, precision/recall tracking, and reporting.
-* `src/qfa_verify/ibm/runner.py` — Execution interface for Aer simulators and IBM Quantum backends.
-* `stress_test.sh` — Automation script for noise-boundary analysis.
-* `examples/` — Benchmark circuits in `.qasm` and `.py` formats.
 
 ---
 
@@ -125,18 +110,27 @@ qfa_ltl_project/
 
 ### Requirements
 
-* Python 3.9+
-* Qiskit 1.0+
-* Qiskit Aer
+* Python ≥ 3.10
+* Qiskit ≥ 1.0, Qiskit Aer, Qiskit IBM Runtime
+* lark, graphviz, matplotlib, seaborn, pandas
 
 ### Clone and Configure
 
 ```bash
-git clone https://github.com/your-username/qfa_ltl_project.git
+git clone https://github.com/RansomnicCase/QFA-LTL-.git
 cd qfa_ltl_project
-export PYTHONPATH=$PYTHONPATH:$(pwd)
+
+# Recommended: editable install (makes `qfa_verify` importable everywhere)
+pip install -e .
+
+# Alternative: manual PYTHONPATH (project root for src.* imports,
+# plus src/ for top-level qfa_verify imports)
+export PYTHONPATH=$PYTHONPATH:$(pwd):$(pwd)/src
 mkdir -p outputs
 ```
+
+> Note: if your shell exports a global PYTHONPATH (e.g. from another tool's venv),
+> unset it before running: `env -u PYTHONPATH .venv/bin/python ...`
 
 ---
 
@@ -144,121 +138,84 @@ mkdir -p outputs
 
 ### 1. Basic Verification
 
-Verify a GHZ state using the parity metric:
+The LTL spec is authoritative: it supplies the target basis state(s) and the comparison direction.
 
 ```bash
 python3 verify.py \
     --circuit examples/ghz.qasm \
-    --spec "F(p > t)" \
+    --spec "F(prob(|000>) + prob(|111>) > 0.5)" \
     --metric parity \
     --target "000, 111"
 ```
 
----
+(`--target` is optional — without it, basis states come from the spec predicate.)
 
 ### 2. Adversarial Stress Testing
-
-Inject 10% artificial noise to validate robustness:
 
 ```bash
 python3 verify.py \
     --circuit examples/ghz.qasm \
-    --spec "F(p > t)" \
+    --spec "F(prob(|000>) + prob(|111>) > 0.5)" \
     --metric parity \
     --target "000, 111" \
-    --noise 0.1
+    --noise 0.1 \
+    --seed 42
 ```
-
----
 
 ### 3. Batch Benchmarking
 
-Generate a robustness curve across the noise spectrum:
+The full 24-circuit suite (6 algorithms × correct + 3 injected faults), seeded and reproducible:
 
 ```bash
-chmod +x stress_test.sh
-./stress_test.sh
+python3 run_benchmarks.py --seed 42 --shots 1024 --reps 5
 ```
+
+Generates `outputs/experiments/*.json` plus a per-algorithm confusion report.
 
 ---
 
 ## Experimental Validation
 
-The framework has been validated across standard quantum algorithms to demonstrate resilience against false failures:
+Current honest baseline (seed 42, 24-circuit suite, 5 reps, fake_brisbane noise model, 120 tests):
 
-* **GHZ State**
-  Validated parity and entanglement stability under varying noise conditions.
+| Metric | Value |
+|---|---|
+| False-failure rate (correct circuits failed) | **0.0%** (30/30 pass) |
+| Bug-detection recall | 77.8% (70/90) |
+| Alarm precision (FAIL ⇒ truly buggy) | **100.0%** |
+| Compiler agreement vs Qiskit statevector | max \|Δp\| = 8.9e-16 (896 states) |
+| Temporal monitor semantics | windowed Bernoulli, operator-aware |
 
-* **Bernstein-Vazirani (10-qubit)**
-  Demonstrated scalability and signal tracking in high-width registers.
+The 20 missed faults are *measurement-invisible by construction* (see below) — the framework detects exactly the class that measurement statistics can detect, with zero false alarms.
 
-* **Quantum Phase Estimation (QPE)**
-  Validated temporal logic enforcement in high-depth, high-volume gate sequences.
+---
+
+## Known Limitations
+
+1. **Measurement-invisible faults.** Faults that preserve the target-basis probability distribution cannot be detected from measurement statistics alone. Demonstrated classes: QFT phase errors and missing SWAPs (uniform magnitude spectrum preserved), GHZ entanglement-structure mutations (parity distribution preserved). Detection of these requires phase-sensitive probes (rotated bases, entanglement witnesses) — an open research direction.
+2. **Simulator-validated, hardware pending.** All results use Aer with fake-backend calibration noise models. The IBM Runtime runner is a stub; real-device validation (esp. the ZKC drift study) is the next milestone.
+3. **Threshold learning is in-sample.** `SafetyOrchestrator` currently derives thresholds from the correct circuits of the same run. A hold-out calibration protocol (thresholds from a separate calibration set) is required before publication.
+4. **Single-shot statistics.** Runs are deterministic given a seed but reported without confidence intervals. Publication runs require ≥30 seeds with means ± CI (Wilson/Chernoff) and baselines (fixed, Hoeffding, Wilson-only, no-ZKC).
+5. **No formal theory yet.** The automaton semantics, truncation bound, and anchor soundness need formal statements (paper Phase 2).
+
+---
+
+## Research Status
+
+This is an active research project being prepared for submission (IEEE QCE 2026). The proposed contribution, stated honestly:
+
+> **A noise-adaptive statistical test-oracle synthesis framework for NISQ executions** — ZKC calibration probes → volume-based anchors → LTL temporal monitoring over measurement windows — with a characterized fault-detectability frontier.
+
+Not claimed: on-chip quantum automata verification, post-classical-scale verification, or equivalence checking. The framework targets the complementary question: *is the noisy measured behavior of this circuit acceptable?*
 
 ---
 
 ## Dependencies
 
-* Python ≥ 3.9
-* Qiskit ≥ 1.0
-* Qiskit Aer
-* IBM Quantum Runtime (optional, for hardware execution)
-
----
-
-## Configuration
-
-Environment variables:
-
-```bash
-export PYTHONPATH=$PYTHONPATH:$(pwd)
-```
-
-Optional parameters:
-
-* `--noise <float>` — Inject artificial stochastic noise.
-* `--metric <type>` — Specify verification metric.
-* `--spec "<LTL_formula>"` — Provide temporal property.
-* `--target "<bitstrings>"` — Expected valid outcomes.
-
----
-
-## Examples
-
-Located in the `examples/` directory:
-
-* `ghz.qasm`
-* Benchmark circuits in both `.qasm` and `.py` formats.
-
----
-
-## Troubleshooting
-
-**ModuleNotFoundError**
-Ensure `PYTHONPATH` includes the project root.
-
-**Backend execution issues**
-Confirm IBM Quantum credentials are properly configured.
-
-**Unexpected FAIL verdicts**
-Check:
-
-* Noise injection parameter
-* Hardware calibration drift
-* Correct LTL specification
-
----
-
-## Contributors
-
-* Y. Agnihotri
-
----
-
-## License
-
-This project is currently part of an ongoing research submission.
-License details will be updated upon publication.
+* Python ≥ 3.10
+* Qiskit ≥ 1.0, Qiskit Aer, Qiskit IBM Runtime
+* lark, graphviz, matplotlib, seaborn, pandas
+* (analysis dashboard) streamlit, plotly
 
 ---
 

@@ -34,11 +34,12 @@ class ProductAutomaton:
     """
     
     def __init__(self, circuit_qfa: CircuitQFA, spec_qfa: BuchiAutomaton, 
-                 target_basis: str, threshold: float):
+                 target_basis, threshold: float, comparison: str = '>'):
         self.circuit = circuit_qfa
         self.spec = spec_qfa
-        self.target = target_basis
+        self.target = target_basis  # str or List[str] (multi-basis predicates)
         self.threshold = threshold
+        self.comparison = comparison
         
         # Product automaton components
         self.states: Set[ProductState] = set()
@@ -68,7 +69,8 @@ class ProductAutomaton:
                 self.accepting_states.add(current)
             
             # Expand transitions
-            # For each possible observation (measurement outcome)
+            # Predicate is evaluated on the aggregate target-basis probability.
+            pred_holds = self._predicate_holds()
             for basis_state in self.circuit.get_basis_states():
                 basis_str = basis_state.bits
                 prob = self.circuit.get_probability(basis_str)
@@ -77,7 +79,7 @@ class ProductAutomaton:
                     continue
                 
                 # Check if this observation satisfies the predicate
-                is_sat = self._check_satisfaction(basis_str, prob)
+                is_sat = pred_holds
                 obs = 'sat' if is_sat else 'unsat'
                 
                 # Get next spec state
@@ -101,12 +103,21 @@ class ProductAutomaton:
                     visited.add(next_prod)
                     queue.append(next_prod)
     
+    def _predicate_holds(self) -> bool:
+        """Aggregate target-basis probability compared per the spec operator."""
+        targets = self.target if isinstance(self.target, list) else [self.target]
+        total = sum(self.circuit.get_probability(t) for t in targets)
+        comp = self.comparison
+        if comp == '>':   return total > self.threshold
+        if comp == '>=':  return total >= self.threshold
+        if comp == '<':   return total < self.threshold
+        if comp == '<=':  return total <= self.threshold
+        return total > self.threshold
+
     def _check_satisfaction(self, basis: str, prob: float) -> bool:
-        """Check if basis state satisfies the LTL predicate"""
-        # Simple case: basis matches target and prob > threshold
-        if basis == self.target:
-            return prob > self.threshold
-        return False
+        """Back-compat single-basis predicate check."""
+        targets = self.target if isinstance(self.target, list) else [self.target]
+        return basis in targets and self._predicate_holds()
     
     def find_min_accepting_probability(self) -> Tuple[float, List[ProductState]]:
         """

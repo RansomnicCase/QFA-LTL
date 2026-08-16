@@ -9,6 +9,9 @@ description = "Noise-resilient quantum verification via Adaptive Safety Anchorin
 dependencies = [
     "qiskit>=1.0.0",
     "qiskit-aer",
+    "qiskit-ibm-runtime",
+    "lark",
+    "graphviz",
     "matplotlib",
     "seaborn",
     "pandas"

@@ -1,4 +1,4 @@
-from typing import List, Dict, Tuple
+from typing import List, Dict, Tuple, Optional, Union
 from dataclasses import dataclass
 from enum import Enum
 
@@ -16,63 +16,100 @@ class MonitorState:
     probability: float
 
 class TemporalMonitor:
-    def __init__(self, spec_qfa, target_basis: str, threshold: float):
+    """
+    Online LTL monitor over quantum measurement traces.
+
+    Semantics: each time step t is a window of measurement shots; the atomic
+    predicate prob(|b1> + |b2> + ...) c t is evaluated as the empirical
+    fraction of shots in the window that land in any target basis, compared
+    with the operator `c` from the LTL spec. The spec automaton then consumes
+    the sat/unsat observation. This makes F(p>t), G(p<t), bounded variants,
+    and multi-basis (parity-style) predicates all well-defined.
+    """
+
+    def __init__(self, spec_qfa, target_basis: Union[str, List[str]], threshold: float,
+                 comparison: str = '>', window_size: Optional[int] = None):
         self.spec = spec_qfa
-        self.target = target_basis
+        self.targets = [target_basis] if isinstance(target_basis, str) else list(target_basis)
         self.threshold = threshold
+        self.comparison = comparison
+        self.window_size = window_size
         self.history: List[MonitorState] = []
-        
+
+    # -- predicate evaluation -------------------------------------------
+    def _compare(self, frac: float) -> bool:
+        comp = self.comparison
+        if comp == '>':   return frac > self.threshold
+        if comp == '>=':  return frac >= self.threshold
+        if comp == '<':   return frac < self.threshold
+        if comp == '<=':  return frac <= self.threshold
+        if comp == '==':  return abs(frac - self.threshold) < 1e-9
+        return frac > self.threshold
+
+    def _window_fraction(self, window: List[str]) -> float:
+        if not window:
+            return 0.0
+        return sum(1 for o in window if o in self.targets) / len(window)
+
+    # -- automaton bookkeeping ------------------------------------------
+    def _is_F_op(self) -> bool:
+        op = getattr(self.spec, 'operator', 'F')
+        return op == 'F' or op.startswith('F<=')
+
+    def _observe(self, next_state: str) -> Satisfaction:
+        if next_state in self.spec.accepting_states:
+            return Satisfaction.SAT
+        if next_state in getattr(self.spec, 'violating_states', set()):
+            return Satisfaction.VIOLATED
+        return Satisfaction.PENDING
+
+    # -- trace processing ------------------------------------------------
     def process_trace(self, shots: List[str]) -> Tuple[bool, List[MonitorState]]:
         current_auto_state = self.spec.initial_state
         self.history = []
-        
+
         for t, outcome in enumerate(shots):
-            is_sat = self._check_predicate(outcome, t+1)
+            lo = 0 if self.window_size is None else max(0, t + 1 - self.window_size)
+            window = shots[lo:t + 1]
+            frac = self._window_fraction(window)
+            is_sat = self._compare(frac)
             obs = 'sat' if is_sat else 'unsat'
-            
+
             next_state = self.spec.transitions.get(
-                (current_auto_state, obs), 
+                (current_auto_state, obs),
                 current_auto_state
             )
-            
-            if next_state in self.spec.accepting_states:
-                status = Satisfaction.SAT
-            elif next_state in ['q_fail', 'q_violated']:
-                status = Satisfaction.VIOLATED
-            elif any(next_state == f'q{i}' for i in range(10000)):
-                status = Satisfaction.PENDING
-            else:
-                status = Satisfaction.UNSAT
-            
-            prob = shots[:t+1].count(self.target) / (t+1) if t > 0 else 0
-            
+
+            status = self._observe(next_state)
+
             state = MonitorState(
                 step=t,
                 automaton_state=next_state,
                 satisfaction=status,
-                probability=prob
+                probability=frac
             )
             self.history.append(state)
             current_auto_state = next_state
-            
+
             if status == Satisfaction.VIOLATED:
                 return False, self.history
-            if status == Satisfaction.SAT and not self._is_globally_op():
+            # F-family: satisfaction is permanent once observed.
+            if status == Satisfaction.SAT and self._is_F_op():
                 return True, self.history
-        
+
+        # G-family: the property must hold at *every* step; final acceptance
+        # is decided by the automaton state at trace end.
         final_accept = current_auto_state in self.spec.accepting_states
         return final_accept, self.history
-    
+
     def _check_predicate(self, outcome: str, step: int) -> bool:
-        return outcome == self.target
-    
-    def _is_globally_op(self) -> bool:
-        return any(s in ['q_violated', 'q_ok'] for s in self.spec.states)
-    
+        """Back-compat single-shot predicate (unwindowed)."""
+        return outcome in self.targets
+
     def get_diagnostic(self) -> Dict:
         if not self.history:
             return {}
-        
+
         last = self.history[-1]
         return {
             'total_steps': len(self.history),
@@ -80,36 +117,32 @@ class TemporalMonitor:
             'satisfaction': last.satisfaction.value,
             'max_probability': max((s.probability for s in self.history), default=0),
             'first_violation_step': next(
-                (s.step for s in self.history if s.satisfaction == Satisfaction.VIOLATED), 
+                (s.step for s in self.history if s.satisfaction == Satisfaction.VIOLATED),
                 None
             )
         }
+
 
 class BatchTemporalMonitor(TemporalMonitor):
     def process_histograms(self, histograms: List[Dict[str, int]], window_size: int = 100):
         current_auto_state = self.spec.initial_state
         self.history = []
-        
+
         for t, hist in enumerate(histograms):
             total = sum(hist.values())
-            count = hist.get(self.target, 0)
+            count = sum(hist.get(tgt, 0) for tgt in self.targets)
             prob = count / total if total > 0 else 0
-            
-            is_sat = prob > self.threshold
+
+            is_sat = self._compare(prob)
             obs = 'sat' if is_sat else 'unsat'
-            
+
             next_state = self.spec.transitions.get(
                 (current_auto_state, obs),
                 current_auto_state
             )
-            
-            if next_state in self.spec.accepting_states:
-                status = Satisfaction.SAT
-            elif next_state in ['q_fail', 'q_violated']:
-                status = Satisfaction.VIOLATED
-            else:
-                status = Satisfaction.PENDING
-            
+
+            status = self._observe(next_state)
+
             state = MonitorState(
                 step=t * window_size,
                 automaton_state=next_state,
@@ -118,8 +151,10 @@ class BatchTemporalMonitor(TemporalMonitor):
             )
             self.history.append(state)
             current_auto_state = next_state
-            
+
             if status == Satisfaction.VIOLATED:
                 return False, self.history
-        
+            if status == Satisfaction.SAT and self._is_F_op():
+                return True, self.history
+
         return current_auto_state in self.spec.accepting_states, self.history

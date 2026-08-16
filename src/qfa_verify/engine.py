@@ -2,10 +2,11 @@ import logging
 import numpy as np
 import random
 from qiskit import QuantumCircuit, transpile
-from qiskit.circuit.library import XGate, ZGate
+from qiskit.circuit.library import XGate, ZGate, YGate
 # Absolute imports to prevent circularity
 from src.qfa_verify.experiments.orchestrator import SafetyOrchestrator
 from src.qfa_verify.ibm.runner import SimulatorRunner
+from src.qfa_verify.ltl.parser import parse_ltl
 
 class MetricStrategies:
     @staticmethod
@@ -51,22 +52,48 @@ class AdversarialNoise:
         noisy_qc = QuantumCircuit(*circuit.qregs, *circuit.cregs)
         for instruction in circuit.data:
             noisy_qc.append(instruction)
+            if instruction.operation.name == 'measure':
+                continue
             if random.random() < error_probability:
                 target_qubit = instruction.qubits[0]
-                error_gate = XGate() if random.random() > 0.5 else ZGate()
+                error_gate = random.choice([XGate(), YGate(), ZGate()])
                 noisy_qc.append(error_gate, [target_qubit])
         
         return noisy_qc
 
 class UniversalVerifier:
-    def __init__(self, backend_name="fake_brisbane"):
+    def __init__(self, backend_name="fake_brisbane", seed=None):
         self.backend_name = backend_name
+        self.seed = seed
+        if seed is not None:
+            random.seed(seed)
+            np.random.seed(seed)
         self.orchestrator = SafetyOrchestrator(backend=backend_name)
-        self.runner = SimulatorRunner()
+        self.runner = SimulatorRunner(seed=seed)
         self.backend_obj = self.runner.backends.get(backend_name, self.runner.backends['fake_brisbane'])
         
         logging.basicConfig(level=logging.INFO)
         self.logger = logging.getLogger("UniversalVerifier")
+
+    def _parse_spec(self, ltl_spec: str) -> dict:
+        """Parse and validate the LTL spec. Raises on invalid syntax."""
+        return parse_ltl(ltl_spec)
+
+    def _spec_to_target(self, parsed_spec: dict, metric_type: str):
+        """
+        Derive the metric target(s) from the LTL predicate.
+        The spec is authoritative: prob(|b1> + |b2> > t) maps to
+        a parity-style sum over the listed basis states.
+        """
+        pred = parsed_spec['predicate']
+        bases = pred.get('bases') or ([pred['basis']] if pred.get('basis') else [])
+        if metric_type == 'parity':
+            return bases
+        return bases[0] if bases else None
+
+    def _spec_direction(self, parsed_spec: dict) -> str:
+        """Verdict direction: '>' means pass when metric exceeds threshold; '<' means the inverse."""
+        return parsed_spec['predicate'].get('comparison', '>')
 
     def _calibrate_noise_floor(self, target_qubits: list):
         """Phase 2: Zero-Knowledge Calibration (ZKC)."""
@@ -81,6 +108,8 @@ class UniversalVerifier:
         
         from qiskit_aer import AerSimulator
         sim = AerSimulator.from_backend(self.backend_obj)
+        if self.seed is not None:
+            sim.set_options(seed_simulator=self.seed)
         # 4096 shots for research-grade stability
         job = sim.run(t_probe, shots=4096)
         counts = job.result().get_counts()
@@ -105,7 +134,16 @@ class UniversalVerifier:
         return max(0.10, adaptive_threshold)
 
     def verify(self, circuit, ltl_spec, metric_type="probability", target_params=None, adversarial_noise=0.0):
-        """The Universal Verification Pipeline."""
+        """The Universal Verification Pipeline.
+
+        The LTL spec is now authoritative: it supplies the target basis state(s)
+        and the comparison direction for the verdict. Explicit --target CLI
+        parameters remain as an override for multi-target parity checks.
+        """
+        # 1. Parse the temporal spec up front (fail fast on invalid LTL).
+        parsed_spec = self._parse_spec(ltl_spec)
+        direction = self._spec_direction(parsed_spec)
+
         ready_circuit = transpile(circuit, self.backend_obj, optimization_level=3)
         layout = ready_circuit.layout.final_index_layout()
         physical_qubits = layout if layout else [0, 1]
@@ -124,8 +162,15 @@ class UniversalVerifier:
         )
         counts = results[0].counts
 
-        metric_value = self._calculate_metric(counts, metric_type, target_params)
-        verdict = "pass" if metric_value >= threshold else "fail"
+        # Target derivation: spec wins unless the caller explicitly overrode it.
+        spec_target = self._spec_to_target(parsed_spec, metric_type)
+        effective_target = target_params if target_params is not None else spec_target
+        metric_value = self._calculate_metric(counts, metric_type, effective_target)
+
+        if direction == '<' or direction == '<=':
+            verdict = "pass" if metric_value <= threshold else "fail"
+        else:
+            verdict = "pass" if metric_value >= threshold else "fail"
 
         return {
             "verdict": verdict,
@@ -133,6 +178,8 @@ class UniversalVerifier:
             "threshold": threshold,
             "calibration_loss": cal_loss,
             "adversarial_noise": adversarial_noise,
+            "spec": ltl_spec,
+            "spec_parsed": parsed_spec,
             "counts": counts
         }
 

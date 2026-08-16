@@ -26,7 +26,7 @@ def run_comparison():
     for scale in noise_scaling:
         # We simulate noise by artificially scaling the calibration loss 
         # to see how the engine's math reacts to "bad days" on hardware
-        report = engine.verify(qc, "G(p > t)", metric_type="expectation", target_params="0000000")
+        report = engine.verify(qc, "F(prob(|0000000>) > 0.1)", metric_type="expectation", target_params="0000000")
         
         # Simulate hardware degradation: 
         # Measured value drops, and calibration loss (noise) increases
@@ -45,7 +45,7 @@ def run_comparison():
     # 3. Visualization for the Paper
     plt.figure(figsize=(10, 6))
     plt.plot(results["noise_lv"], results["metric_vals"], 'b-o', label='Measured Fidelity (Signal)')
-    plt.plot(results["noise_lv"], results["adaptive_anchors"], 'r--', label='Adaptive Anchor (Ours)')
+    plt.plot(results["noise_lv"], results["adaptive_anchors"], 'r--', label='Adaptive Anchor (Ours, floored at 0.10)')
     plt.axhline(y=fixed_threshold, color='green', linestyle=':', label='Fixed Threshold (Legacy)')
     
     # Highlight the "False Failure Zone"
@@ -64,6 +64,10 @@ def run_comparison():
     print("✅ Plot saved to outputs/plots/comparison_study.png")
 
     # 4. Generate LaTeX Table
+    # NOTE: For this 7-qubit variational circuit the volume-based anchor saturates
+    # at its 0.10 safety floor, so the sweep exercises the floor region only.
+    # The false-failure recovery claim must be demonstrated on circuits whose
+    # anchor lies above the floor (see Phase 1: real noise sweeps with CIs).
     print("\n% LaTeX Results Table")
     print("\\begin{tabular}{|c|c|c|c|c|}")
     print("\\hline Noise & Metric & Fixed (0.15) & Adaptive & Improvement \\\\ \\hline")
