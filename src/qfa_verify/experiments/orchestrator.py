@@ -68,6 +68,7 @@ class SafetyOrchestrator:
     def run_full_suite(self, backends: List[str], shots: int = 1024, reps: int = 5,
                        strategy: Union[str, ThresholdStrategy] = "adaptive_zkc",
                        holdout_fraction: float = 0.0,
+                       gray_margin: float = 0.0,
                        seed: Optional[int] = None):
         """Main Execution Loop for the full research battery.
 
@@ -77,6 +78,11 @@ class SafetyOrchestrator:
             reps: repetitions per circuit
             strategy: threshold strategy (name or instance)
             holdout_fraction: fraction of correct circuits to use for calibration (0 = in-sample)
+            gray_margin: fraction of threshold used as a gray zone around the verdict.
+                When > 0, a circuit whose metric is within gray_margin*threshold of the
+                boundary gets verdict='borderline' instead of pass/fail. This is the
+                honest "needs review" category — it prevents a noisy run from being
+                falsely branded a hard failure.
             seed: random seed (overrides constructor seed)
         """
         if seed is not None:
@@ -88,7 +94,7 @@ class SafetyOrchestrator:
         
         print("="*60)
         print(f"🚀 STARTING QFA-LTL EXPERIMENT SUITE")
-        print(f"   Strategy: {strategy.name} | Hold-out: {holdout_fraction:.0%} | Seed: {self.seed}")
+        print(f"   Strategy: {strategy.name} | Hold-out: {holdout_fraction:.0%} | Gray: {gray_margin:.0%} | Seed: {self.seed}")
         print("="*60)
         
         suite_obj = BenchmarkSuite()
@@ -101,7 +107,7 @@ class SafetyOrchestrator:
             
             # Compute thresholds using the strategy
             thresholds = self._diagnose_and_get_thresholds(results, strategy, suite_obj, holdout_fraction)
-            eval_results = self._evaluate_with_thresholds(results, thresholds)
+            eval_results = self._evaluate_with_thresholds(results, thresholds, gray_margin=gray_margin)
             
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
             filename = self.results_dir / f"{backend}_{strategy.name}_{timestamp}.json"
@@ -322,7 +328,8 @@ class SafetyOrchestrator:
             # Fall back to a conservative default if compilation fails
             return 0.5
 
-    def _evaluate_with_thresholds(self, results: List[IBMJobResult], thresholds: Dict) -> List[Dict]:
+    def _evaluate_with_thresholds(self, results: List[IBMJobResult], thresholds: Dict,
+                                  gray_margin: float = 0.0) -> List[Dict]:
         evaluated = []
         for res in results:
             base = res.circuit_name.split('_')[0]
@@ -331,10 +338,18 @@ class SafetyOrchestrator:
             threshold = thresholds.get(base, 0.15)
             # Uniform verdict semantics: pass iff the measured success metric
             # clears the adaptive anchor. No per-algorithm inversion hacks.
-            passed = bool(val > threshold)
+            # Optional gray zone: metrics within gray_margin of the boundary are
+            # 'borderline' — honest "needs review" instead of hard pass/fail.
+            if gray_margin > 0 and abs(val - threshold) <= gray_margin * threshold:
+                verdict = 'borderline'
+                passed = True  # borderline is not a hard failure
+            else:
+                passed = bool(val > threshold)
+                verdict = 'pass' if passed else 'fail'
             evaluated.append({
                 'circuit': res.circuit_name, 'passed': passed, 'is_buggy': bool(is_buggy),
                 'metric_value': float(val), 'threshold': float(threshold),
+                'verdict': verdict,
                 'true_positive': bool(passed and not is_buggy)
             })
         return evaluated
