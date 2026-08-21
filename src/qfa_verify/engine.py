@@ -101,9 +101,18 @@ class UniversalVerifier:
         """
         pred = parsed_spec['predicate']
         bases = pred.get('bases') or ([pred['basis']] if pred.get('basis') else [])
+        # Multi-basis predicates come back from the parser as lark Trees
+        # (sum_prob -> ['00', '11']). Flatten to plain strings so parity
+        # summation and target matching work with the actual basis states.
+        flat = []
+        for b in bases:
+            if hasattr(b, 'children'):
+                flat.extend(str(c) for c in b.children)
+            else:
+                flat.append(str(b))
         if metric_type == 'parity':
-            return bases
-        return bases[0] if bases else None
+            return flat
+        return flat[0] if flat else None
 
     def _spec_direction(self, parsed_spec: dict) -> str:
         """Verdict direction: '>' means pass when metric exceeds threshold; '<' means the inverse."""

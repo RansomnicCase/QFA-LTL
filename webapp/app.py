@@ -51,6 +51,15 @@ def run_demo(payload: dict):
         # defaults alone (this is what makes G(... < t) behave correctly).
         pred = spec.get('predicate', {})
         bases = pred.get('bases') or ([pred['basis']] if pred.get('basis') else [])
+        # Flatten multi-basis predicates: the parser returns lark Trees
+        # (sum_prob -> ['00', '11']) for prob(|a>) + prob(|b>) specs.
+        flat_bases = []
+        for b in bases:
+            if hasattr(b, 'children'):
+                flat_bases.extend(str(c) for c in b.children)
+            else:
+                flat_bases.append(str(b))
+        bases = flat_bases
         comparison = pred.get('comparison', '>')
         threshold = float(pred.get('threshold', threshold))
         if not target or target == '11' and bases:
@@ -76,9 +85,13 @@ def run_demo(payload: dict):
             # windows. The burst must land within `bound` shots; keep the
             # window fill time (WINDOW shots) well inside it.
             prefix = max(0, bound - WINDOW - 50)
-            trace = [other] * prefix + [targets[0]] * 600
+            # Sample across all target bases so multi-basis predicates
+            # (prob(|a>) + prob(|b>) > t) accumulate correctly.
+            burst = [targets[i % len(targets)] for i in range(600)]
+            trace = [other] * prefix + burst
         else:
-            trace = [other] * 500 + [targets[0]] * 600   # window fills to 100%
+            burst = [targets[i % len(targets)] for i in range(600)]
+            trace = [other] * 500 + burst   # window fills to ~100%
 
         monitor = TemporalMonitor(spec_qfa, targets, threshold,
                                   comparison=comparison, window_size=WINDOW)
