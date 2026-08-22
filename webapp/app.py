@@ -2,9 +2,10 @@ from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
+from pathlib import Path
 import traceback
 
-app = FastAPI(title="QFA-LTL Demo")
+app = FastAPI(title="QFA-LTL Verification Console")
 
 # Allow local dev origins
 app.add_middleware(
@@ -17,6 +18,46 @@ app.add_middleware(
 
 # Serve static UI
 app.mount("/static", StaticFiles(directory="webapp/static"), name="static")
+
+REPO_ROOT = Path(__file__).resolve().parent.parent
+
+# Real example circuits backing the "Verification Console" UI. Each entry
+# points at a file already used elsewhere in the repo (README's Experimental
+# Validation section, run_comparison_study.py) so the console exercises the
+# same circuits the project's own results are based on.
+EXAMPLE_CIRCUITS = {
+    "ghz": {
+        "path": REPO_ROOT / "examples" / "ghz.qasm",
+        "name": "GHZ state",
+    },
+    "bv10": {
+        "path": REPO_ROOT / "examples" / "bv_10.py",
+        "name": "Bernstein–Vazirani",
+    },
+    "qpe": {
+        "path": REPO_ROOT / "examples" / "qpe_complex.qasm",
+        "name": "Phase estimation",
+    },
+    "stress7": {
+        "path": REPO_ROOT / "examples" / "stress_7q.py",
+        "name": "Adversarial ansatz",
+    },
+}
+
+SUPPORTED_BACKENDS = ("fake_brisbane", "fake_sherbrooke")
+
+# UniversalVerifier instances are expensive to construct (they load fake
+# backend calibration snapshots), so keep one per backend name for the life
+# of the server process.
+_verifier_cache = {}
+
+
+def _get_verifier(backend_name: str):
+    from src.qfa_verify.engine import UniversalVerifier
+
+    if backend_name not in _verifier_cache:
+        _verifier_cache[backend_name] = UniversalVerifier(backend_name=backend_name)
+    return _verifier_cache[backend_name]
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -85,8 +126,6 @@ def run_demo(payload: dict):
             # windows. The burst must land within `bound` shots; keep the
             # window fill time (WINDOW shots) well inside it.
             prefix = max(0, bound - WINDOW - 50)
-            # Sample across all target bases so multi-basis predicates
-            # (prob(|a>) + prob(|b>) > t) accumulate correctly.
             burst = [targets[i % len(targets)] for i in range(600)]
             trace = [other] * prefix + burst
         else:
@@ -129,3 +168,75 @@ def run_demo(payload: dict):
     except Exception as e:
         tb = traceback.format_exc()
         raise HTTPException(status_code=500, detail={"error": str(e), "trace": tb})
+
+
+@app.post("/api/verify")
+def api_verify(payload: dict):
+    """Run the real UniversalVerifier pipeline (ZKC + Adaptive Safety Anchor +
+    execution) for the "Verification Console" UI. This is the same engine
+    verify.py drives from the CLI — no mocked/random data.
+
+    Expected JSON payload fields:
+      - circuit: one of EXAMPLE_CIRCUITS' keys ("ghz", "bv10", "qpe", "stress7")
+      - spec: LTL specification string
+      - metric: "probability" | "parity" | "expectation"
+      - target: target basis state(s), comma-separated for multiple (e.g. "00,11")
+      - backend: "fake_brisbane" | "fake_sherbrooke"
+      - noise: adversarial noise injection probability, 0.0-1.0
+    """
+    try:
+        circuit_id = payload.get("circuit")
+        preset = EXAMPLE_CIRCUITS.get(circuit_id)
+        if not preset:
+            raise HTTPException(status_code=400, detail=f"Unknown circuit '{circuit_id}'")
+
+        backend_name = payload.get("backend", "fake_brisbane")
+        if backend_name not in SUPPORTED_BACKENDS:
+            raise HTTPException(status_code=400, detail=f"Unsupported backend '{backend_name}'")
+
+        spec = (payload.get("spec") or "").strip() or "F(p > t)"
+        metric = payload.get("metric", "probability")
+        target = (payload.get("target") or "").strip()
+        noise = float(payload.get("noise", 0.0))
+
+        from verify import load_circuit
+
+        qc = load_circuit(str(preset["path"]))
+        target_params = target.split(",") if "," in target else (target or None)
+
+        verifier = _get_verifier(backend_name)
+        report = verifier.verify(
+            qc, spec, metric_type=metric, target_params=target_params, adversarial_noise=noise
+        )
+
+        counts = {k.replace(" ", ""): v for k, v in report["counts"].items()}
+
+        # The spec is authoritative (see engine.py's _spec_to_target): when no
+        # explicit target override was sent, report the basis/bases the spec
+        # itself resolved to, so the UI can still highlight the right bars.
+        if target:
+            effective_target = target
+        else:
+            predicate = report.get("spec_parsed", {}).get("predicate", {})
+            spec_bases = predicate.get("bases") or ([predicate["basis"]] if predicate.get("basis") else [])
+            effective_target = ",".join(spec_bases)
+
+        return {
+            "circuit": circuit_id,
+            "circuit_name": preset["name"],
+            "num_qubits": qc.num_qubits,
+            "backend": backend_name,
+            "spec": spec,
+            "metric": metric,
+            "target": effective_target,
+            "adversarial_noise": noise,
+            "verdict": report["verdict"],
+            "metric_value": report["metric_value"],
+            "threshold": report["threshold"],
+            "calibration_loss": report["calibration_loss"],
+            "counts": counts,
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

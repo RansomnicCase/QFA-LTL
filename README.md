@@ -107,23 +107,25 @@ qfa_ltl_project/
 
 ---
 
-## Web App Demo
+## Web App — Verification Console
 
-A FastAPI-powered interactive demo of the **LTL → Spec QFA → Temporal Monitor** pipeline ships in `webapp/`. The frontend lives in `webapp/static/` (plain HTML/CSS/JS, no build step) and talks to the backend at `POST /api/run`.
+A FastAPI-powered **Verification Console** ships in `webapp/`. One HTML shell (`webapp/static/index.html`) plus vanilla JS/CSS — no build step — talks to the real backend at `POST /api/verify` (same `UniversalVerifier` engine as `verify.py`).
 
 **Quick start (macOS/Linux):**
 
 ```bash
-python -m uvicorn webapp.app:app --host 127.0.0.1 --port 8001
+python3 -m uvicorn webapp.app:app --host 127.0.0.1 --port 8001
 ```
 
-Open **http://127.0.0.1:8001/** and click **Run Demo**.
+Open **http://127.0.0.1:8001/** and pick a preset circuit (GHZ, BV-10, QPE, 7-qubit stress), then click **Run verification**.
 
-What the demo does:
-- **Preset LTL specs** — GHZ eventually, bounded eventually (F≤5), globally (G < t), Bernstein-Vazirani — plus a custom editor for your own spec.
-- **Windowed temporal monitoring** — the exact spec automaton consumes sat/unsat observations over shot windows (windowed Bernoulli semantics).
-- **Circuit compilation demo** — optional 2-qubit Grover circuit compiled through the exact `CircuitQFA` compiler, with a Chart.js probability bar chart.
-- The spec is authoritative: target basis set, comparison direction, and threshold come from the parsed LTL predicate.
+What the console does:
+- **Real example circuits** from `examples/` — GHZ, Bernstein–Vazirani, phase estimation, adversarial ansatz.
+- **Full verifier pipeline** — Zero-Knowledge Calibration probe, adaptive safety anchor, circuit execution, verdict.
+- **LTL spec editor** with metric/backend/noise controls; the parsed spec is authoritative for target basis and threshold direction.
+- **Measurement histogram** with target-state highlighting.
+
+The older standalone HTML exports (`QFA-LTL Verifier*.html`) and the simple `/api/run` toy demo have been removed — use the webapp server above.
 
 ---
 
